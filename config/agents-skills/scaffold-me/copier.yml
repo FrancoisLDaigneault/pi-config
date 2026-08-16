@@ -1,0 +1,122 @@
+_min_copier_version: "9.17.1"
+_subdirectory: template
+_templates_suffix: .jinja
+_exclude:
+  - _profiles
+_envops:
+  autoescape: false
+  block_end_string: "%]"
+  block_start_string: "[%"
+  comment_end_string: "#]"
+  comment_start_string: "[#"
+  keep_trailing_newline: true
+  undefined: jinja2.StrictUndefined
+  variable_end_string: "]]"
+  variable_start_string: "[["
+
+profile:
+  type: str
+  help: Technology profile
+  choices:
+    Python: python
+    Rust: rust
+    TypeScript: typescript
+
+project_name:
+  type: str
+  help: Human-readable project name
+  validator: >-
+    [% set slug = project_name | lower
+      | regex_replace('[^a-z0-9]+', '-')
+      | regex_replace('(^-+|-+$)', '') -%]
+    [% if '[[' in project_name or '[%' in project_name or '[#' in project_name -%]
+    Project name must not contain Copier template delimiters.
+    [%- elif '\n' in project_name or '\r' in project_name -%]
+    Project name must be one line.
+    [%- elif not slug or slug | length > 64 -%]
+    Project name must produce a 1-64 character kebab-case slug.
+    [%- endif %]
+
+project_slug:
+  type: str
+  default: >-
+    [[ project_name | lower
+      | regex_replace('[^a-z0-9]+', '-')
+      | regex_replace('(^-+|-+$)', '') ]]
+  when: false
+
+package_name:
+  type: str
+  default: "[[ project_slug | replace('-', '_') ]]"
+  when: false
+
+github_owner:
+  type: str
+  help: Optional GitHub username used to generate CODEOWNERS
+  default: ""
+  when: false
+  validator: >-
+    [% set owner = github_owner | trim | regex_replace('^@', '') -%]
+    [% if github_owner != github_owner | trim -%]
+    GitHub username must not contain surrounding whitespace.
+    [%- elif owner and owner | regex_replace('^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$', '') -%]
+    GitHub username must be 1-39 letters, numbers, or hyphens and cannot start or end with a hyphen.
+    [%- endif %]
+
+purpose:
+  type: str
+  help: One-sentence reason the project exists
+  validator: >-
+    [% if not purpose | trim -%]
+    Purpose is required.
+    [%- elif '[[' in purpose or '[%' in purpose or '[#' in purpose -%]
+    Purpose must not contain Copier template delimiters.
+    [%- endif %]
+
+vision:
+  type: str
+  help: Concrete expected outcome
+  validator: >-
+    [% if not vision | trim -%]
+    Vision is required.
+    [%- elif '[[' in vision or '[%' in vision or '[#' in vision -%]
+    Vision must not contain Copier template delimiters.
+    [%- endif %]
+
+license:
+  type: str
+  help: Project license
+  choices:
+    MIT: MIT
+    No license granted: UNLICENSED
+
+copyright_holder:
+  type: str
+  help: MIT copyright holder
+  when: "[[ license == 'MIT' ]]"
+  validator: >-
+    [% if '[[' in copyright_holder or '[%' in copyright_holder or '[#' in copyright_holder -%]
+    Copyright holder must not contain Copier template delimiters.
+    [%- elif not copyright_holder | trim -%]
+    Copyright holder is required for MIT.
+    [%- elif '\n' in copyright_holder or '\r' in copyright_holder -%]
+    Copyright holder must be one line.
+    [%- endif %]
+
+copyright_year:
+  type: int
+  help: MIT copyright year
+  when: "[[ license == 'MIT' ]]"
+  validator: >-
+    [% if copyright_year < 1900 or copyright_year > 9999 -%]
+    Copyright year must be between 1900 and 9999.
+    [%- endif %]
+
+coverage_target:
+  type: int
+  help: Required line-and-region-or-branch coverage percentage
+  default: 95
+  validator: >-
+    [% if coverage_target < 90 or coverage_target > 100 -%]
+    Coverage target must be between 90 and 100.
+    [%- endif %]

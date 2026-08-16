@@ -1,0 +1,22 @@
+[package]
+name = "[[ project_slug ]]"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+[% if license == 'MIT' %]
+license = "MIT"
+[% endif %]
+publish = false
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "deny"

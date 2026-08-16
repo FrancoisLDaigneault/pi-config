@@ -1,0 +1,23 @@
+[% import pathjoin('template', '_profiles', profile, 'values.jinja') as profile_values with context -%]
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+  - package-ecosystem: [[ profile_values.DEPENDABOT_ECOSYSTEM ]]
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dependencies:
+        patterns:
+          - "*"

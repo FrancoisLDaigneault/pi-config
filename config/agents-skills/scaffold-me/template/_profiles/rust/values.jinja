@@ -1,0 +1,213 @@
+[% set TAGLINE -%]
+
+[%- endset %]
+
+[% set DEPENDABOT_ECOSYSTEM = 'cargo' -%]
+[% set RELEASE_TYPE = 'rust' -%]
+
+[% set BADGES -%]
+![Rust](https://img.shields.io/badge/Rust-1.97-000000?logo=rust)
+[%- endset %]
+
+[% set NORTHSTAR_STATEMENT -%]
+Defined standards let us automate with confidence while continuously improving security, delivery speed, maintainability, and quality.
+[%- endset %]
+
+[% set ARCHITECTURE_SUMMARY -%]
+This scaffold starts as one Rust library crate under `src`. New components and boundaries are added only when the approved project target requires them.
+[%- endset %]
+
+[% set DOCUMENTATION_LINKS -%]
+- [North Star](NORTHSTAR.md)
+- [Architecture](docs/architecture.md)
+- [Engineering standards](docs/engineering/standards.md)
+- [Testing](docs/engineering/testing.md)
+- [Tooling and quality gates](docs/engineering/tooling.md)
+- [DevSecOps](docs/engineering/devsecops.md)
+
+[%- endset %]
+
+[% set SECURITY_SECTION -%]
+
+[%- endset %]
+
+[% set DEVELOPMENT_PREREQUISITES -%]
+- Rust 1.97.1 toolchain with rustfmt, Clippy, and llvm-tools-preview
+- just
+- pre-commit
+- Gitleaks
+- zizmor
+[%- endset %]
+
+[% set DEVELOPMENT_SETUP_COMMANDS -%]
+cargo install --locked --version 0.8.7 cargo-llvm-cov
+cargo install --locked --version 0.20.2 cargo-deny
+cargo install --locked --version 1.13.3 cargo-shear
+pre-commit install --install-hooks
+[%- endset %]
+
+[% set LOCAL_CONFIGURATION_SECTION -%]
+
+[%- endset %]
+
+[% set LOCAL_SERVICES_SECTION -%]
+
+[%- endset %]
+
+[% set LOCAL_RUN_SECTION -%]
+
+[%- endset %]
+
+[% set FAST_CHECK_COMMANDS -%]
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+cargo shear --deny-warnings
+cargo test --workspace --all-targets --all-features --locked
+[%- endset %]
+
+[% set DEPENDENCY_COMMANDS_SECTION -%]
+Use `cargo add <crate>` and `cargo remove <crate>`. Commit the generated `Cargo.lock`.
+[%- endset %]
+
+[% set LOCAL_HOOKS_SECTION -%]
+## Local hooks
+
+Install hooks with `pre-commit install --install-hooks` and run them manually
+with `pre-commit run --all-files`.
+
+The installed `commit-msg` hook rejects commits that do not follow
+Conventional Commits.
+
+[%- endset %]
+
+[% set CHANGE_SUBMISSION_SECTION -%]
+## Submitting changes
+
+Keep changes focused, run every required gate, and review the final diff.
+[%- endset %]
+
+[% set SECURITY_REPORTING_SECTION -%]
+
+[%- endset %]
+
+[% set ARCHITECTURE_OVERVIEW -%]
+[[ project_name | trim ]] currently contains one Rust library crate and its tests.
+[%- endset %]
+
+[% set SYSTEM_DIAGRAM_SECTION -%]
+
+[%- endset %]
+
+[% set COMPONENTS_AND_OWNERSHIP -%]
+| Component | Location | Responsibility |
+|---|---|---|
+| Library crate | `src` | Owns production behavior and its public API |
+| Test suite | `tests` | Protects public contracts and behavior |
+[%- endset %]
+
+[% set DEPENDENCY_DIRECTION -%]
+Tests may depend on the public crate. Production code must not depend on tests, generated output, or developer tooling.
+[%- endset %]
+
+[% set RUNTIME_DATA_FLOW -%]
+No multi-component runtime flow exists in the initial scaffold.
+[%- endset %]
+
+[% set DIRECTORY_TREE -%]
+```text
+src/
+└── lib.rs
+tests/
+└── smoke.rs
+```
+[%- endset %]
+
+[% set RUNTIME_CONSTRAINTS -%]
+The Rust 1.97.1 toolchain is required. The initial crate defines no network, storage, concurrency, latency, or deployment contract.
+[%- endset %]
+
+[% set NAMING_CONVENTIONS -%]
+Crates use `kebab-case`; modules, functions, methods, and variables use `snake_case`; types and traits use `PascalCase`; constants use `UPPER_SNAKE_CASE`; test names describe behavior in `snake_case`.
+[%- endset %]
+
+[% set TECHNOLOGY_STANDARDS -%]
+### Rust
+
+- Use the Rust 1.97.1 toolchain and edition 2024.
+- Keep rustfmt and Clippy clean with warnings denied.
+- Deny missing public documentation and broken intra-doc links in native Cargo lint tables.
+- Use idiomatic rustdoc (`//!` and `///`) for public APIs and relevant Errors, Panics, Safety, and examples sections.
+- Keep unsafe code forbidden unless an approved architecture decision requires it.
+- Prefer explicit ownership, checked operations, and narrow public APIs.
+- Add dependencies only for concrete requirements.
+[%- endset %]
+
+[% set COVERAGE_REQUIREMENTS -%]
+Coverage is enforced through `cargo llvm-cov` with line and region thresholds
+at [[ coverage_target ]]%. The `just coverage` command produces a terminal
+report with missed lines.
+[%- endset %]
+
+[% set TEST_LAYOUT -%]
+The base scaffold contains one public crate-linkage test in `tests/smoke.rs`. Add other test levels only for real responsibilities.
+[%- endset %]
+
+[% set TECHNOLOGY_TESTING_STANDARDS -%]
+### Rust testing
+
+Use Cargo unit, integration, and documentation tests. Keep tests deterministic and protect public behavior rather than implementation details.
+[%- endset %]
+
+[% set TOOLCHAIN -%]
+| Concern | Standard tool | Gate |
+|---|---|---|
+| Toolchain and dependencies | rustup and Cargo | Rust 1.97.1 and committed `Cargo.lock` |
+| Formatting | rustfmt | No formatting differences |
+| Linting | Clippy | Zero warnings |
+| Dependency hygiene | cargo-shear | No unused dependencies |
+| Supply chain | cargo-deny | No unapproved advisories, licenses, bans, or sources |
+| Documentation | cargo doc | No broken intra-doc links or missing public docs |
+| Testing and coverage | Cargo and cargo-llvm-cov | All tests pass; [[ coverage_target ]]% line and region coverage |
+| Secret scanning | Gitleaks | No verified secrets |
+| GitHub Actions security | zizmor | No unapproved findings |
+[%- endset %]
+
+[% set QUALITY_GATES -%]
+| Gate | Required result |
+|---|---|
+| rustfmt | No formatting differences |
+| Clippy | Zero warnings across workspace all-targets all-features |
+| cargo-shear | No unused dependencies |
+| cargo test | All target and documentation tests pass |
+| cargo doc | No denied missing public docs or broken links |
+| cargo llvm-cov | [[ coverage_target ]]% line and region coverage |
+| cargo deny | No unapproved advisories, licenses, bans, or sources |
+| Gitleaks | No verified secrets |
+| zizmor | No unapproved GitHub Actions findings |
+[%- endset %]
+
+[% set SETUP_COMMANDS -%]
+cargo install --locked --version 0.8.7 cargo-llvm-cov
+cargo install --locked --version 0.20.2 cargo-deny
+cargo install --locked --version 1.13.3 cargo-shear
+pre-commit install --install-hooks
+[%- endset %]
+
+[% set VERIFY_COMMANDS -%]
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+cargo shear --deny-warnings
+cargo test --workspace --all-targets --all-features --locked
+cargo test --workspace --doc --all-features --locked
+cargo doc --workspace --all-features --no-deps --locked
+cargo llvm-cov --workspace --all-features --all-targets --locked --fail-under-lines [[ coverage_target ]] --fail-under-regions [[ coverage_target ]] --show-missing-lines
+cargo deny --locked check
+gitleaks git --redact --no-banner
+zizmor --pedantic .
+[%- endset %]
+
+[% set DEVSECOPS_PROFILE -%]
+cargo-deny enforces advisory, license, ban, and source policies. cargo-shear
+detects unused dependencies. Gitleaks scans repository history and zizmor
+analyzes GitHub Actions.
+[%- endset %]

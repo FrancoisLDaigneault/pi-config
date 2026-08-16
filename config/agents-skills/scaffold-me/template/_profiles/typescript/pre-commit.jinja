@@ -1,0 +1,34 @@
+minimum_pre_commit_version: "4.0.0"
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: biome
+        name: Biome
+        entry: pnpm exec biome check . --write --error-on-warnings
+        language: system
+        pass_filenames: false
+        types_or: [javascript, jsx, ts, tsx, json]
+      - id: pnpm-lock-currency
+        name: pnpm-lock.yaml currency
+        entry: pnpm install --lockfile-only --frozen-lockfile
+        language: system
+        pass_filenames: false
+        files: ^(package\.json|pnpm-lock\.yaml)$
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8 # frozen: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

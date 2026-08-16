@@ -1,0 +1,8 @@
+//! Public contract integration tests for [[ project_name | trim ]].
+
+use [[ package_name ]]::package_version;
+
+#[test]
+fn package_exports_expected_version() {
+    assert_eq!(package_version(), env!("CARGO_PKG_VERSION"));
+}

@@ -1,0 +1,28 @@
+{
+  "name": "[[ project_slug ]]",
+  "version": "0.1.0",
+  "private": true,
+[% if license == 'MIT' %]
+  "license": "MIT",
+[% else %]
+  "license": "UNLICENSED",
+[% endif %]
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24.18.0 <25"
+  },
+  "scripts": {
+    "check": "biome check . && tsc --noEmit && vitest run",
+    "format": "biome format --write .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.7",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "knip": "6.31.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

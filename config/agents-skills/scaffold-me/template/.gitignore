@@ -1,0 +1,104 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.swp
+*~
+
+# Logs, temporary files, and reports
+*.log
+*.tmp
+*.temp
+.cache/
+coverage/
+htmlcov/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.coverage.*
+.hypothesis/
+.mypy_cache/
+.nox/
+.pytest_cache/
+.ruff_cache/
+.tox/
+.ipynb_checkpoints/
+
+# JavaScript and TypeScript
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+
+# Rust, Go, JVM, and .NET
+target/
+*.test
+coverage.out
+.gradle/
+*.class
+
+# Native, Swift, Dart, Elixir, Haskell, and Zig
+build/
+dist/
+out/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+.build/
+DerivedData/
+xcuserdata/
+.dart_tool/
+/_build/
+/deps/
+.stack-work/
+dist-newstyle/
+.zig-cache/
+zig-out/
+
+# Infrastructure tooling
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+
+# Package-manager local state
+.bundle/
+vendor/bundle/
+.direnv/
+/result
+/result-*

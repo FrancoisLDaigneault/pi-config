@@ -1,0 +1,8 @@
+# Environnement virtuel et caches Python
+.venv/
+__pycache__/
+*.pyc
+
+# Securite : jamais de secrets ni de bases memoire dans le repo
+auth.json
+*.sqlite3*

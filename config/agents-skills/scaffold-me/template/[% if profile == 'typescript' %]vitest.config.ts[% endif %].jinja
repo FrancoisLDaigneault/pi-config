@@ -1,0 +1,18 @@
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    coverage: {
+      include: ["src/**/*.ts"],
+      provider: "v8",
+      reportOnFailure: true,
+      reporter: ["text"],
+      thresholds: {
+        branches: [[ coverage_target ]],
+        functions: [[ coverage_target ]],
+        lines: [[ coverage_target ]],
+        statements: [[ coverage_target ]],
+      },
+    },
+  },
+});

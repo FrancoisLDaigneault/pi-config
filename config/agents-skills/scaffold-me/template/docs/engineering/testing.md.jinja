@@ -1,0 +1,129 @@
+[% import pathjoin('template', '_profiles', profile, 'values.jinja') as profile_values with context -%]
+# Testing
+
+Tests provide evidence that project-owned behavior, contracts and invariants
+work as required.
+
+The meaningful-verification rules in [AGENTS.md](../../AGENTS.md) apply to
+every test.
+
+## Evidence standard
+
+- Every test must protect against a credible defect.
+- Test observable behavior rather than implementation structure.
+- Choose the least expensive test level that proves the relevant risk.
+- Use a higher test level when a lower level cannot exercise the real boundary.
+- Do not duplicate the same evidence across several levels without a distinct
+  risk being protected.
+- Prefer clear high-signal tests over a large test count.
+- Do not create tests or assertions solely to satisfy coverage.
+
+## Test-driven development
+
+For behavior changes and defect fixes:
+
+1. Write the smallest failing test that expresses the required behavior or
+   reproduces the defect.
+2. Implement the smallest change that makes it pass.
+3. Refactor only while the relevant tests remain green.
+
+For a behavior-preserving refactor, establish that meaningful existing tests
+pass before and after the change. Add tests only when the existing evidence is
+insufficient to refactor safely.
+
+Documentation-only, metadata and generated-file changes do not require
+artificial failing tests.
+
+## Test levels
+
+### Unit tests
+
+Use unit tests for project-owned logic that can be exercised without real
+external systems.
+
+- Keep them fast and deterministic.
+- Test through public behavior.
+- Do not mock internal implementation details.
+- Do not require network access, external processes or shared infrastructure.
+
+### Integration tests
+
+Use integration tests for boundaries whose behavior depends on a database,
+filesystem, network protocol, framework integration or external adapter.
+
+- Exercise the real implementation when practical.
+- Use isolated disposable infrastructure.
+- Do not replace important production semantics with an incompatible in-memory
+  substitute.
+- Keep contract tests with integration tests unless a genuinely independent
+  suite is required.
+
+### End-to-end tests
+
+Use end-to-end tests only for established critical journeys that cannot be
+proven adequately at lower levels.
+
+- Keep the suite small.
+- Exercise the deployed or composed system through a public entry point.
+- Do not reproduce every lower-level test through the complete system.
+
+Create only the test levels the project genuinely uses. Do not generate empty
+test directories for hypothetical future tests.
+
+## Test doubles
+
+- Use a fake only at a real external boundary.
+- Model only the behavior relevant to the test.
+- Do not use a fake that contradicts important production semantics.
+- Use a shared contract test when divergence between a fake and a real adapter
+  would create a credible risk.
+- Use a mock only when the interaction itself is part of the required contract.
+- Do not assert internal call order or call counts unless they are observable
+  requirements.
+- Do not mock the behavior being tested.
+
+## Determinism and isolation
+
+- Control time, randomness, environment variables and external responses.
+- Seed required randomized tests.
+- Use synthetic test data and safe placeholder credentials.
+- Never call live external services from automated tests.
+- Keep tests independent of execution order.
+- Isolate files, ports, database state and other mutable resources.
+- Release resources and clean up state predictably.
+- Do not use arbitrary sleeps for synchronization.
+- Bound eventual assertions with an explicit timeout.
+- Treat a flaky test as a defect, not as an acceptable retry condition.
+
+## Regression tests
+
+- Reproduce a reported defect before fixing it when practical.
+- Keep the smallest test that prevents the defect from returning.
+- Test the underlying behavior rather than the accidental implementation that
+  caused the defect.
+- Remove a redundant regression test only when equivalent meaningful evidence
+  clearly exists elsewhere.
+
+## Coverage
+
+Coverage identifies unexercised code; it does not establish correctness.
+
+- Measure the coverage dimensions supported by the selected ecosystem.
+- Require branch coverage when the selected tool supports it.
+- Never lower a threshold merely to pass a build.
+- Do not add low-value tests to increase a percentage.
+- Reconsider untestable design before excluding code.
+- Limit exclusions to generated, vendored or demonstrably unreachable code.
+- Explain every non-obvious exclusion narrowly.
+- Require 100% coverage only for explicitly identified critical code where the
+  requirement is meaningful and enforceable.
+
+[[ profile_values.COVERAGE_REQUIREMENTS ]]
+
+## Test organization
+
+[[ profile_values.TEST_LAYOUT ]]
+
+## Technology-specific testing rules
+
+[[ profile_values.TECHNOLOGY_TESTING_STANDARDS ]]

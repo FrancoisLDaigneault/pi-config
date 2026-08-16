@@ -1,0 +1,63 @@
+default:
+    @just --list
+
+setup:
+    cargo install --locked --version 0.8.7 cargo-llvm-cov
+    cargo install --locked --version 0.20.2 cargo-deny
+    cargo install --locked --version 1.13.3 cargo-shear
+    pre-commit install --install-hooks
+
+format:
+    cargo fmt --all
+
+lint:
+    cargo fmt --all --check
+    cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+typecheck:
+    cargo check --workspace --all-targets --all-features --locked
+
+test:
+    cargo test --workspace --all-targets --all-features --locked
+    cargo test --workspace --doc --all-features --locked
+
+test-fast:
+    cargo test --workspace --all-targets --all-features --locked
+
+coverage:
+    cargo llvm-cov --workspace --all-features --all-targets --locked \
+        --fail-under-lines [[ coverage_target ]] \
+        --fail-under-regions [[ coverage_target ]] \
+        --show-missing-lines
+
+audit:
+    cargo deny --locked check
+
+unused:
+    cargo shear --deny-warnings
+
+docs:
+    cargo doc --workspace --all-features --no-deps --locked
+
+security:
+    cargo deny --locked check
+    gitleaks git --redact --no-banner
+    zizmor --pedantic .
+
+hooks:
+    pre-commit run --all-files
+
+check: lint typecheck unused test-fast
+
+ci:
+    cargo fmt --all --check
+    cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+    cargo shear --deny-warnings
+    cargo test --workspace --all-targets --all-features --locked
+    cargo test --workspace --doc --all-features --locked
+    cargo doc --workspace --all-features --no-deps --locked
+    cargo llvm-cov --workspace --all-features --all-targets --locked \
+        --fail-under-lines [[ coverage_target ]] \
+        --fail-under-regions [[ coverage_target ]] \
+        --show-missing-lines
+    cargo deny --locked check

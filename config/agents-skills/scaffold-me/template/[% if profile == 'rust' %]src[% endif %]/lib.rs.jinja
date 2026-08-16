@@ -1,0 +1,7 @@
+//! [[ project_name | trim ]].
+
+/// The current package version.
+#[must_use]
+pub fn package_version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}

@@ -1,0 +1,44 @@
+default:
+    @just --list
+
+setup:
+    uv sync --locked
+    uv run --locked pre-commit install --install-hooks
+
+format:
+    uv run --locked ruff format .
+    uv run --locked ruff check --fix .
+
+lint:
+    uv run --locked ruff format --check .
+    uv run --locked ruff check .
+
+typecheck:
+    uv run --locked mypy src tests
+
+test:
+    uv run --locked pytest
+
+test-fast:
+    uv run --locked pytest -q --no-cov
+
+security:
+    uv run --locked pip-audit --local --skip-editable
+    gitleaks git --redact --no-banner
+    uv run --locked zizmor .
+
+hooks:
+    uv run --locked pre-commit run --all-files
+
+check: lint typecheck test-fast
+
+ci:
+    uv lock --check
+    uv sync --locked
+    uv run --locked ruff format --check .
+    uv run --locked ruff check .
+    uv run --locked mypy src tests
+    uv run --locked deptry .
+    uv run --locked pytest
+    uv run --locked pip-audit --local --skip-editable
+    uv run --locked zizmor .

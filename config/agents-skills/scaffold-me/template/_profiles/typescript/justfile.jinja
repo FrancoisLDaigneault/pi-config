@@ -1,0 +1,55 @@
+default:
+    @just --list
+
+setup:
+    pnpm install --frozen-lockfile
+    pre-commit install --install-hooks
+
+format:
+    pnpm exec biome format --write .
+
+lint:
+    pnpm exec biome ci . --error-on-warnings
+
+typecheck:
+    pnpm exec tsc -p tsconfig.json
+
+test:
+    pnpm exec vitest run --coverage
+
+test-fast:
+    pnpm exec vitest run
+
+coverage:
+    pnpm exec vitest run --coverage
+
+unused:
+    pnpm exec knip
+
+dedupe:
+    pnpm dedupe --check
+
+audit:
+    pnpm audit
+    pnpm audit signatures
+
+security:
+    pnpm audit
+    pnpm audit signatures
+    gitleaks git --redact --no-banner
+    zizmor --pedantic .
+
+hooks:
+    pre-commit run --all-files
+
+check: lint typecheck unused test-fast
+
+ci:
+    pnpm install --frozen-lockfile
+    pnpm exec biome ci . --error-on-warnings
+    pnpm exec tsc -p tsconfig.json
+    pnpm exec knip
+    pnpm exec vitest run --coverage
+    pnpm dedupe --check
+    pnpm audit
+    pnpm audit signatures

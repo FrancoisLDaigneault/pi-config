@@ -1,0 +1,10 @@
+{
+  "askClaude": {
+    "enabled": true,
+    "allowFullMode": true
+  },
+  "provider": {
+    "plan": "pro",
+    "pathToClaudeCodeExecutable": "C:\\Users\\franc\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Anthropic.ClaudeCode_Microsoft.Winget.Source_8wekyb3d8bbwe\\claude.exe"
+  }
+}

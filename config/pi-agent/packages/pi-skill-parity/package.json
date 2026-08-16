@@ -1,0 +1,14 @@
+{
+  "name": "pi-skill-parity",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Restores the <available_skills> catalog for agents on providers whose prompt builder omits it (e.g. openai-codex). Provider-parity fill for Pi subagents.",
+  "keywords": ["pi-package", "pi-extension", "pi", "skills", "parity"],
+  "pi": {
+    "extensions": ["./index.js"]
+  },
+  "piExtension": {
+    "lifecycle": "stable"
+  }
+}
