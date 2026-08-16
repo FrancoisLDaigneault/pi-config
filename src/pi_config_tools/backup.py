@@ -91,7 +91,7 @@ def _print_summary(totals: dict[str, int]) -> None:
     print("Ne pas uploader ce backup en clair (cloud, repo git, etc.).")
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Sauvegarde complete locale de Pi.")
     parser.add_argument(
         "--destination",

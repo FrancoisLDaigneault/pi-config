@@ -18,18 +18,18 @@ SECRET_KEYS = {
 SECRET_VALUE_RE = re.compile(r"^(sk-|ghp_|gho_|github_pat_|xox[a-z]-|Bearer )")
 
 
-def _is_secret_value(value) -> bool:
+def _is_secret_value(value: object) -> bool:
     return isinstance(value, str) and bool(SECRET_VALUE_RE.match(value))
 
 
-def _is_secret_entry(key: str, value) -> bool:
+def _is_secret_entry(key: str, value: object) -> bool:
     if not isinstance(value, str):
         return False
     return key.lower() in SECRET_KEYS or bool(SECRET_VALUE_RE.match(value))
 
 
-def _redact_dict(node: dict, path: str) -> list[str]:
-    found = []
+def _redact_dict(node: dict[str, object], path: str) -> list[str]:
+    found: list[str] = []
     for key, value in node.items():
         where = f"{path}.{key}" if path else key
         if _is_secret_entry(key, value):
@@ -40,8 +40,8 @@ def _redact_dict(node: dict, path: str) -> list[str]:
     return found
 
 
-def _redact_list(node: list, path: str) -> list[str]:
-    found = []
+def _redact_list(node: list[object], path: str) -> list[str]:
+    found: list[str] = []
     for i, value in enumerate(node):
         where = f"{path}[{i}]"
         if _is_secret_value(value):
@@ -52,7 +52,7 @@ def _redact_list(node: list, path: str) -> list[str]:
     return found
 
 
-def redact(node, path="") -> list[str]:
+def redact(node: object, path: str = "") -> list[str]:
     """Caviarde recursivement les valeurs suspectes. Retourne la liste des chemins caviardes."""
     if isinstance(node, dict):
         return _redact_dict(node, path)
@@ -63,7 +63,7 @@ def redact(node, path="") -> list[str]:
 
 def scan_copied_json(config: Path) -> list[str]:
     """Audit post-copie : caviarde les secrets dans tous les *.json copies dans config/."""
-    found = []
+    found: list[str] = []
     for path in sorted(config.rglob("*.json")):
         rel = path.relative_to(config).as_posix()
         try:

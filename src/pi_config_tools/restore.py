@@ -55,7 +55,7 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
     return count
 
 
-def _parse_args(argv) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Restaure config/ vers les emplacements vifs.")
     parser.add_argument(
         "--apply", action="store_true", help="executer reellement (defaut : simulation)"
@@ -71,7 +71,7 @@ def _parse_args(argv) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     apply = args.apply and not args.dry_run
 

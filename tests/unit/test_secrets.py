@@ -1,18 +1,19 @@
 """Tests unitaires du caviardage de secrets (fonctions pures + tmp_path)."""
 
 import json
+from pathlib import Path
 
 from pi_config_tools.secrets import redact, scan_copied_json
 
 
-def test_redact_dict_secret_key():
+def test_redact_dict_secret_key() -> None:
     data = {"apiKey": "abc123", "name": "ok"}
     found = redact(data)
     assert data == {"apiKey": "<REDACTED>", "name": "ok"}
     assert found == ["apiKey"]
 
 
-def test_redact_dict_secret_value_prefix():
+def test_redact_dict_secret_value_prefix() -> None:
     data = {"header": "Bearer xyz", "url": "https://example.com"}
     found = redact(data)
     assert data["header"] == "<REDACTED>"
@@ -20,28 +21,28 @@ def test_redact_dict_secret_value_prefix():
     assert found == ["header"]
 
 
-def test_redact_list_values():
+def test_redact_list_values() -> None:
     data = {"headers": ["Bearer xyz", "ok"], "plain": ["sk-abc"]}
     found = redact(data)
     assert data == {"headers": ["<REDACTED>", "ok"], "plain": ["<REDACTED>"]}
     assert sorted(found) == ["headers[0]", "plain[0]"]
 
 
-def test_redact_nested():
+def test_redact_nested() -> None:
     data = {"outer": [{"token": "ghp_abcdef"}]}
     found = redact(data)
     assert data == {"outer": [{"token": "<REDACTED>"}]}
     assert found == ["outer[0].token"]
 
 
-def test_redact_clean_data_untouched():
+def test_redact_clean_data_untouched() -> None:
     data = {"maxTokens": 4096, "models": ["claude-fable-5"], "ask-user": {"enabled": True}}
     before = json.dumps(data)
     assert redact(data) == []
     assert json.dumps(data) == before
 
 
-def test_scan_copied_json_redacts_and_reports(tmp_path):
+def test_scan_copied_json_redacts_and_reports(tmp_path: Path) -> None:
     config = tmp_path / "config"
     nested = config / "pi-agent" / "extensions"
     nested.mkdir(parents=True)

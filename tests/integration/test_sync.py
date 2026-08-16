@@ -1,12 +1,15 @@
 """Integration : sync contre une fausse arborescence (jamais la vraie config)."""
 
 import json
+import shutil
+from pathlib import Path
 
-from pi_config_tools import sync
+import pytest
+
 from pi_config_tools.sync import main
 
 
-def test_sync_copies_and_excludes(sandbox):
+def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     assert main() == 0
     config = repo / "config"
@@ -37,7 +40,7 @@ def test_sync_copies_and_excludes(sandbox):
     assert not (config / "pi-agent" / "npm" / "node_modules").exists()
 
 
-def test_sync_redacts_secrets(sandbox):
+def test_sync_redacts_secrets(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     assert main() == 0
     settings = json.loads(
@@ -47,7 +50,7 @@ def test_sync_redacts_secrets(sandbox):
     assert settings["packages"] == ["pi-lens"]
 
 
-def test_sync_rebuilds_config_from_scratch(sandbox):
+def test_sync_rebuilds_config_from_scratch(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     stale = repo / "config" / "obsolete.txt"
     stale.parent.mkdir(parents=True)
@@ -56,20 +59,28 @@ def test_sync_rebuilds_config_from_scratch(sandbox):
     assert not stale.exists()
 
 
-def test_sync_invalid_live_json_exits_1(sandbox, capsys):
+def test_sync_invalid_live_json_exits_1(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
     home, _repo = sandbox
     (home / ".pi" / "agent" / "settings.json").write_text("{pas du json", encoding="utf-8")
     assert main() == 1
     assert "sync interrompu" in capsys.readouterr().out
 
 
-def test_sync_rmtree_failure_exits_1(sandbox, monkeypatch, capsys):
+def test_sync_rmtree_failure_exits_1(
+    sandbox: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     _home, repo = sandbox
     (repo / "config").mkdir()
 
-    def boom(path):
+    def boom(path: Path) -> None:
         raise OSError("acces refuse")
 
-    monkeypatch.setattr(sync.shutil, "rmtree", boom)
+    # sync.shutil est le module shutil global : le patcher directement est equivalent
+    # (mypy strict interdit l'acces au re-export implicite sync.shutil)
+    monkeypatch.setattr(shutil, "rmtree", boom)
     assert main() == 1
     assert "impossible de nettoyer" in capsys.readouterr().out

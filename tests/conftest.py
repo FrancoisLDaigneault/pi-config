@@ -1,16 +1,18 @@
 """Fixtures partagees : fausse config Pi vive + redirection des chemins par variables d'env."""
 
 import json
+from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
 
-def touch(path, content="x"):
+def touch(path: Path, content: str = "x") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
 
-def build_fake_home(home):
+def build_fake_home(home: Path) -> Path:
     """Construit une fausse config Pi vive minimale mais representative."""
     agent = home / ".pi" / "agent"
     touch(agent / "APPEND_SYSTEM.md", "# Persona")
@@ -52,14 +54,14 @@ def build_fake_home(home):
 
 
 @pytest.fixture(autouse=True)
-def _isolate_real_config(tmp_path, monkeypatch):
+def _isolate_real_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Defense en profondeur : sans sandbox, les chemins pointent vers un tmp inexistant."""
     monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path / "void" / "home"))
     monkeypatch.setenv("PI_CONFIG_REPO", str(tmp_path / "void" / "repo"))
 
 
 @pytest.fixture
-def sandbox(tmp_path, monkeypatch):
+def sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
     """(home, repo) rediriges via PI_CONFIG_HOME / PI_CONFIG_REPO."""
     home = build_fake_home(tmp_path / "home")
     repo = tmp_path / "repo"
@@ -70,6 +72,6 @@ def sandbox(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def make_fake_home():
+def make_fake_home() -> Callable[[Path], Path]:
     """Expose le builder aux tests e2e sans import inter-modules de tests."""
     return build_fake_home

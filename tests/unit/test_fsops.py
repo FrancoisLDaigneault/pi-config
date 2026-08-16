@@ -1,14 +1,16 @@
 """Tests unitaires de copy_tree et des exclusions (tout dans tmp_path)."""
 
+from pathlib import Path
+
 from pi_config_tools.fsops import copy_tree, is_excluded_file
 
 
-def _touch(path, content="x"):
+def _touch(path: Path, content: str = "x") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
 
-def test_copy_tree_default_exclusions(tmp_path):
+def test_copy_tree_default_exclusions(tmp_path: Path) -> None:
     src = tmp_path / "src"
     _touch(src / "keep.md")
     _touch(src / "sub" / "keep.json")
@@ -29,7 +31,7 @@ def test_copy_tree_default_exclusions(tmp_path):
     assert copied == ["keep.md", "sub/keep.json"]
 
 
-def test_copy_tree_custom_exclusions(tmp_path):
+def test_copy_tree_custom_exclusions(tmp_path: Path) -> None:
     src = tmp_path / "src"
     _touch(src / "auth.json", "secret")
     _touch(src / "data.txt")
@@ -43,7 +45,7 @@ def test_copy_tree_custom_exclusions(tmp_path):
     assert (dst / "auth.json").read_text(encoding="utf-8") == "secret"
 
 
-def test_copy_tree_preserves_content(tmp_path):
+def test_copy_tree_preserves_content(tmp_path: Path) -> None:
     src = tmp_path / "src"
     _touch(src / "a" / "b" / "deep.txt", "contenu profond")
     dst = tmp_path / "dst"
@@ -51,7 +53,7 @@ def test_copy_tree_preserves_content(tmp_path):
     assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "contenu profond"
 
 
-def test_is_excluded_file():
+def test_is_excluded_file() -> None:
     assert is_excluded_file("auth.json")
     assert is_excluded_file("settings.json.bak-2026")
     assert is_excluded_file("settings.backup-20260809.json")

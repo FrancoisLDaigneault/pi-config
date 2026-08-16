@@ -3,13 +3,16 @@
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = REPO_ROOT / "scripts"
 
 
-def run_script(name, args, home, repo):
+def run_script(
+    name: str, args: list[str], home: Path, repo: Path
+) -> subprocess.CompletedProcess[str]:
     env = os.environ | {"PI_CONFIG_HOME": str(home), "PI_CONFIG_REPO": str(repo)}
     return subprocess.run(
         [sys.executable, str(SCRIPTS / name), *args],
@@ -20,7 +23,7 @@ def run_script(name, args, home, repo):
     )
 
 
-def files_under(root):
+def files_under(root: Path) -> dict[str, str]:
     return {
         p.relative_to(root).as_posix(): p.read_text(encoding="utf-8")
         for p in root.rglob("*")
@@ -28,7 +31,9 @@ def files_under(root):
     }
 
 
-def test_sync_then_restore_on_fresh_machine(tmp_path, make_fake_home):
+def test_sync_then_restore_on_fresh_machine(
+    tmp_path: Path, make_fake_home: Callable[[Path], Path]
+) -> None:
     """Fausse config vive -> repo -> nouvelle machine vide -> fichiers identiques."""
     source_home = make_fake_home(tmp_path / "machine-source")
     repo = tmp_path / "repo"
@@ -63,7 +68,7 @@ def test_sync_then_restore_on_fresh_machine(tmp_path, make_fake_home):
     assert ".pi/agent/npm/node_modules/context-mode/build/adapters/pi/extension.js" in restored
 
 
-def test_backup_full_sandbox(tmp_path, make_fake_home):
+def test_backup_full_sandbox(tmp_path: Path, make_fake_home: Callable[[Path], Path]) -> None:
     home = make_fake_home(tmp_path / "machine")
     repo = tmp_path / "repo"
     repo.mkdir()

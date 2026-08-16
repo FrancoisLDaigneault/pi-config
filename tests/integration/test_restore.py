@@ -1,10 +1,14 @@
 """Integration : restore contre un sandbox (dry-run, --apply, auth.json, --patch)."""
 
+from pathlib import Path
+
+import pytest
+
 from pi_config_tools import sync
 from pi_config_tools.restore import main
 
 
-def snapshot(root):
+def snapshot(root: Path) -> dict[str, str]:
     if not root.exists():
         return {}
     return {
@@ -14,11 +18,11 @@ def snapshot(root):
     }
 
 
-def test_restore_requires_config(sandbox):
+def test_restore_requires_config(sandbox: tuple[Path, Path]) -> None:
     assert main([]) == 1
 
 
-def test_dry_run_changes_nothing(sandbox):
+def test_dry_run_changes_nothing(sandbox: tuple[Path, Path]) -> None:
     home, _repo = sandbox
     assert sync.main() == 0
     before = snapshot(home)
@@ -26,7 +30,9 @@ def test_dry_run_changes_nothing(sandbox):
     assert snapshot(home) == before
 
 
-def test_apply_restores_to_fresh_home(sandbox, monkeypatch, tmp_path):
+def test_apply_restores_to_fresh_home(
+    sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _home, _repo = sandbox
     assert sync.main() == 0
     fresh = tmp_path / "fresh-home"
@@ -42,7 +48,9 @@ def test_apply_restores_to_fresh_home(sandbox, monkeypatch, tmp_path):
     assert not (agent / "npm" / "node_modules").exists()
 
 
-def test_apply_never_touches_auth_json(sandbox, monkeypatch, tmp_path):
+def test_apply_never_touches_auth_json(
+    sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Defense en profondeur : meme un auth.json plante dans config/ n'est pas restaure."""
     _home, repo = sandbox
     assert sync.main() == 0
@@ -54,7 +62,9 @@ def test_apply_never_touches_auth_json(sandbox, monkeypatch, tmp_path):
     assert not (fresh / ".pi" / "agent" / "auth.json").exists()
 
 
-def test_patch_flag_includes_patched_node_modules(sandbox, monkeypatch, tmp_path):
+def test_patch_flag_includes_patched_node_modules(
+    sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _home, _repo = sandbox
     assert sync.main() == 0
     fresh = tmp_path / "fresh-home"

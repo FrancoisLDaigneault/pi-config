@@ -16,7 +16,7 @@ def _line_count(path: Path) -> int:
     return len(path.read_text(encoding="utf-8").splitlines())
 
 
-def test_src_modules_max_200_lines():
+def test_src_modules_max_200_lines() -> None:
     modules = sorted(SRC.glob("*.py"))
     assert modules, f"aucun module trouve sous {SRC}"
     for module in modules:
@@ -24,7 +24,7 @@ def test_src_modules_max_200_lines():
         assert n <= MAX_MODULE_LINES, f"{module.name} : {n} lignes (max {MAX_MODULE_LINES})"
 
 
-def test_scripts_max_20_lines():
+def test_scripts_max_20_lines() -> None:
     scripts = sorted(SCRIPTS.glob("*.py"))
     assert scripts, f"aucun script trouve sous {SCRIPTS}"
     for script in scripts:

@@ -110,7 +110,7 @@ def _sync_skills() -> int:
     return n
 
 
-def main(argv=None) -> int:  # argv accepte pour symetrie avec restore/backup (aucune option)
+def main(argv: list[str] | None = None) -> int:  # argv pour symetrie restore/backup (sans option)
     del argv
     config = paths.config_dir()
     if config.exists():

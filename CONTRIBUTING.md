@@ -9,11 +9,12 @@ git config core.hooksPath hooks   # active le hook pre-commit versionné
 
 ## Portes de qualité
 
-Avant toute PR, les deux commandes doivent passer sans erreur (le hook
+Avant toute PR, les trois commandes doivent passer sans erreur (le hook
 pre-commit et la CI les exécutent aussi) :
 
 ```bash
 uv run ruff check .
+uv run mypy
 uv run pytest -q
 ```
 
@@ -22,6 +23,7 @@ uv run pytest -q
 - Complexité cyclomatique (McCabe) ≤ 8
 - ≤ 30 instructions par fonction, ≤ 5 arguments
 - Lignes ≤ 100 caractères
+- Typage statique strict (`mypy --strict` via `[tool.mypy]` dans pyproject.toml)
 - ≤ 200 lignes par module, ≤ 20 par script — vérifié par `tests/unit/test_standards.py`
 
 ## Messages de commit

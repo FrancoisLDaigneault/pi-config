@@ -1,10 +1,16 @@
 """Integration : backup contre un sandbox (sections, inclusions, erreur simulee)."""
 
+from pathlib import Path
+
+import pytest
+
 import pi_config_tools.backup as backup_mod
 from pi_config_tools.backup import main
 
 
-def test_backup_sections_and_inclusions(sandbox, tmp_path, capsys):
+def test_backup_sections_and_inclusions(
+    sandbox: tuple[Path, Path], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     dest = tmp_path / "backup"
     assert main(["--destination", str(dest)]) == 0
 
@@ -37,8 +43,13 @@ def test_backup_sections_and_inclusions(sandbox, tmp_path, capsys):
     assert not (dest / "agents-skills" / "scaffold" / "__pycache__").exists()
 
 
-def test_backup_exit_1_on_section_error(sandbox, tmp_path, monkeypatch, capsys):
-    def boom(*_args, **_kwargs):
+def test_backup_exit_1_on_section_error(
+    sandbox: tuple[Path, Path],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def boom(*_args: object, **_kwargs: object) -> int:
         raise OSError("disque plein (simule)")
 
     monkeypatch.setattr(backup_mod, "copy_tree", boom)

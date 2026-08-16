@@ -23,7 +23,12 @@ def is_excluded_file(name: str) -> bool:
     return any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_FILE_PATTERNS)
 
 
-def copy_tree(src: Path, dst: Path, exclude_dirs=None, exclude_files=None) -> int:
+def copy_tree(
+    src: Path,
+    dst: Path,
+    exclude_dirs: set[str] | None = None,
+    exclude_files: list[str] | None = None,
+) -> int:
     """Copie recursive src -> dst en appliquant les exclusions (defaut : regles repo).
     Retourne le nombre de fichiers copies."""
     if exclude_dirs is None:
@@ -55,6 +60,7 @@ def context_mode_version() -> str:
     if not pkg.exists():
         return "inconnue (package.json absent)"
     try:
-        return json.loads(pkg.read_text(encoding="utf-8")).get("version", "inconnue")
+        version: str = json.loads(pkg.read_text(encoding="utf-8")).get("version", "inconnue")
+        return version
     except (OSError, json.JSONDecodeError):
         return "inconnue (package.json illisible)"
