@@ -2,6 +2,7 @@
 
 import json
 
+from pi_config_tools import sync
 from pi_config_tools.sync import main
 
 
@@ -53,3 +54,22 @@ def test_sync_rebuilds_config_from_scratch(sandbox):
     stale.write_text("vieux", encoding="utf-8")
     assert main() == 0
     assert not stale.exists()
+
+
+def test_sync_invalid_live_json_exits_1(sandbox, capsys):
+    home, _repo = sandbox
+    (home / ".pi" / "agent" / "settings.json").write_text("{pas du json", encoding="utf-8")
+    assert main() == 1
+    assert "sync interrompu" in capsys.readouterr().out
+
+
+def test_sync_rmtree_failure_exits_1(sandbox, monkeypatch, capsys):
+    _home, repo = sandbox
+    (repo / "config").mkdir()
+
+    def boom(path):
+        raise OSError("acces refuse")
+
+    monkeypatch.setattr(sync.shutil, "rmtree", boom)
+    assert main() == 1
+    assert "impossible de nettoyer" in capsys.readouterr().out

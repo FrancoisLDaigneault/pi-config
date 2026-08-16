@@ -24,15 +24,18 @@ AGENT_FILES = [
 ]
 
 
-def sync_json_with_audit(rel: str) -> list[str]:
-    """Copie un JSON de .pi/agent vers config/pi-agent en caviardant les secrets eventuels."""
+def sync_json_with_audit(rel: str) -> list[str] | None:
+    """Copie un JSON de .pi/agent vers config/pi-agent en caviardant les secrets eventuels.
+
+    Retourne None si le fichier est illisible ou n'est pas du JSON valide.
+    """
     src = paths.pi_agent() / rel
     dst = paths.config_dir() / "pi-agent" / rel
     try:
         data = json.loads(src.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         print(f"  erreur : {rel} illisible ou JSON invalide ({exc}) - sync interrompu")
-        raise SystemExit(1) from exc
+        return None
     found = redact(data)
     dst.parent.mkdir(parents=True, exist_ok=True)
     if found:
@@ -56,7 +59,8 @@ def _sync_agent_dirs() -> int:
     return total
 
 
-def _sync_agent_files() -> tuple[int, list[str]]:
+def _sync_agent_files() -> tuple[int, list[str]] | None:
+    """Retourne None si un JSON de config est invalide (erreur propagee a main)."""
     total = 0
     redacted: list[str] = []
     for rel in AGENT_FILES:
@@ -65,7 +69,10 @@ def _sync_agent_files() -> tuple[int, list[str]]:
             print(f"  attention : {rel} absent, ignore")
             continue
         if rel.endswith(".json"):
-            redacted += sync_json_with_audit(rel)
+            found = sync_json_with_audit(rel)
+            if found is None:
+                return None
+            redacted += found
         else:
             copy_file(src, paths.config_dir() / "pi-agent" / rel)
         total += 1
@@ -114,7 +121,10 @@ def main(argv=None) -> int:  # argv accepte pour symetrie avec restore/backup (a
             return 1
 
     total = _sync_agent_dirs()
-    n, redacted = _sync_agent_files()
+    files_result = _sync_agent_files()
+    if files_result is None:
+        return 1
+    n, redacted = files_result
     total += n
     total += _sync_patch()
     total += _sync_skills()
