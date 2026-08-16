@@ -4,3 +4,36 @@ version = "0.1.0"
 description = "Outils de synchronisation, restauration et sauvegarde de la configuration Pi"
 requires-python = ">=3.12"
 dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pi_config_tools"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.3",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "PL", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+max-statements = 30
+max-args = 5
+
+[tool.ruff.lint.per-file-ignores]
+# Les tests comparent des comptes et contenus litteraux : PLR2004 y est du bruit.
+"tests/*" = ["PLR2004"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

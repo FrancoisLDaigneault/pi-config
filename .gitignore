@@ -2,6 +2,8 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
 
 # Securite : jamais de secrets ni de bases memoire dans le repo
 auth.json
