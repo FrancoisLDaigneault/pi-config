@@ -10,6 +10,7 @@ jobs:
   quality:
     # windows-latest : plateforme cible de l'outil (chemins, robocopy-era behaviors)
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -22,12 +23,15 @@ jobs:
     # gitleaks invoque directement en mode `git` (historique complet) plutot que
     # gitleaks-action, dont le calcul de plage echoue sur le push initial (racine^)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Scan full git history with gitleaks
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks.tgz
-          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
-          /tmp/gitleaks git --redact -v .
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks_8.24.3_linux_x64.tar.gz
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_checksums.txt -o /tmp/checksums.txt
+          cd /tmp && grep ' gitleaks_8.24.3_linux_x64.tar.gz$' checksums.txt | sha256sum -c -
+          tar -xzf /tmp/gitleaks_8.24.3_linux_x64.tar.gz -C /tmp gitleaks
+          cd "$GITHUB_WORKSPACE" && /tmp/gitleaks git --redact -v .

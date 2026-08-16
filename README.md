@@ -43,8 +43,8 @@ commandes documentees ici restent inchangees.
 
 Ces standards sont **appliques automatiquement** a deux niveaux :
 
-- **Hook pre-commit** (`hooks/pre-commit`, versionne) : `ruff check` + tests unitaires
-  avant chaque commit. Activation : `git config core.hooksPath hooks`.
+- **Hook pre-commit** (`hooks/pre-commit`, versionne) : `ruff check` + toute la suite
+  de tests (~0.6 s) avant chaque commit. Activation : `git config core.hooksPath hooks`.
 - **CI GitHub Actions** (`.github/workflows/ci.yml`) : sur chaque push/PR vers `main`,
   ruff + les trois suites de tests sur `windows-latest`, plus un scan de secrets
   (gitleaks) sur tout l'historique git.
