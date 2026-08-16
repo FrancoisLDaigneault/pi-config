@@ -11,7 +11,8 @@ Dépôt officiel de la configuration Pi (persona Maestro, extensions, prompts, s
 
 ```bash
 cd pi-config
-uv sync          # cree .venv/, installe le package pi_config_tools (editable) et les outils dev
+uv sync                            # cree .venv/, installe le package pi_config_tools (editable) et les outils dev
+git config core.hooksPath hooks   # active le hook pre-commit versionne (a refaire apres chaque clone)
 ```
 
 ## Structure du code
@@ -39,6 +40,16 @@ commandes documentees ici restent inchangees.
 - `tests/unit/test_standards.py` fait echouer la suite si un module de `src/` depasse
   **200 lignes** ou un script de `scripts/` depasse **20 lignes** : la limite de taille
   est un test, pas une promesse.
+
+Ces standards sont **appliques automatiquement** a deux niveaux :
+
+- **Hook pre-commit** (`hooks/pre-commit`, versionne) : `ruff check` + tests unitaires
+  avant chaque commit. Activation : `git config core.hooksPath hooks`.
+- **CI GitHub Actions** (`.github/workflows/ci.yml`) : sur chaque push/PR vers `main`,
+  ruff + les trois suites de tests sur `windows-latest`, plus un scan de secrets
+  (gitleaks) sur tout l'historique git.
+
+Les KPIs du projet (avec valeurs actuelles et cibles) sont dans [`NORTHSTAR.md`](NORTHSTAR.md).
 
 ## Tests
 
@@ -81,7 +92,7 @@ Si `sync.py` échoue en cours de route (JSON illisible, permission refusée), `c
 L'ordre compte : le patch context-mode doit être recopié **après** l'installation npm, sinon l'installation l'écrase (c'est pour ça que `restore.py` ne le restaure qu'avec le flag explicite `--patch`).
 
 1. **Installer Pi** (et `uv`) sur la nouvelle machine.
-2. **Cloner ce repo** : `git clone <url> pi-config && cd pi-config && uv venv`.
+2. **Cloner ce repo** : `git clone <url> pi-config && cd pi-config && uv sync`, puis `git config core.hooksPath hooks` (reactive le hook pre-commit).
 3. **Restaurer la config Pi** (sans le patch) : `uv run scripts/restore.py` pour vérifier en simulation, puis `uv run scripts/restore.py --apply`. Cela remet en place `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`) et `~/.agents/skills`.
 4. **Réinstaller les packages npm de Pi** : `cd ~/.pi/agent/npm && npm ci` (le lockfile restauré à l'étape 3 garantit les versions exactes).
 5. **Réappliquer le patch context-mode** — maintenant que `node_modules` existe : `uv run scripts/restore.py --apply --patch` (depuis le repo).
