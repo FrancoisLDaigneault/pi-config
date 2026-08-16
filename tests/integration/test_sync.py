@@ -1,0 +1,55 @@
+"""Integration : sync contre une fausse arborescence (jamais la vraie config)."""
+
+import json
+
+from pi_config_tools.sync import main
+
+
+def test_sync_copies_and_excludes(sandbox):
+    _home, repo = sandbox
+    assert main() == 0
+    config = repo / "config"
+
+    # Copies attendues
+    assert (config / "pi-agent" / "APPEND_SYSTEM.md").is_file()
+    assert (config / "pi-agent" / "extensions" / "guard.ts").is_file()
+    assert (config / "pi-agent" / "prompts" / "contract.md").is_file()
+    assert (config / "pi-agent" / "skills" / "loop" / "SKILL.md").is_file()
+    assert (config / "pi-agent" / "packages" / "parity" / "index.js").is_file()
+    assert (config / "pi-agent" / "npm" / "package.json").is_file()
+    assert (config / "pi-agent" / "npm" / "package-lock.json").is_file()
+    assert (config / "agents-skills" / "scaffold" / "SKILL.md").is_file()
+
+    # Patch context-mode + README genere avec la version
+    patched = config / "patched-node_modules"
+    assert (patched / "context-mode" / "build" / "adapters" / "pi" / "extension.js").is_file()
+    assert "9.9.9" in (patched / "README.md").read_text(encoding="utf-8")
+
+    # Exclusions
+    copied = {p.name for p in config.rglob("*") if p.is_file()}
+    assert "auth.json" not in copied
+    assert "mcp-cache.json" not in copied
+    assert "run-history.jsonl" not in copied
+    assert "settings.backup-old.json" not in copied
+    assert "m.pyc" not in copied
+    assert not (config / "pi-agent" / "sessions").exists()
+    assert not (config / "pi-agent" / "npm" / "node_modules").exists()
+
+
+def test_sync_redacts_secrets(sandbox):
+    _home, repo = sandbox
+    assert main() == 0
+    settings = json.loads(
+        (repo / "config" / "pi-agent" / "settings.json").read_text(encoding="utf-8")
+    )
+    assert settings["apiKey"] == "<REDACTED>"
+    assert settings["packages"] == ["pi-lens"]
+
+
+def test_sync_rebuilds_config_from_scratch(sandbox):
+    _home, repo = sandbox
+    stale = repo / "config" / "obsolete.txt"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("vieux", encoding="utf-8")
+    assert main() == 0
+    assert not stale.exists()

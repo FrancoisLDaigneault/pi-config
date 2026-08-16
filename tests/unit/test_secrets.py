@@ -1,0 +1,60 @@
+"""Tests unitaires du caviardage de secrets (fonctions pures + tmp_path)."""
+
+import json
+
+from pi_config_tools.secrets import redact, scan_copied_json
+
+
+def test_redact_dict_secret_key():
+    data = {"apiKey": "abc123", "name": "ok"}
+    found = redact(data)
+    assert data == {"apiKey": "<REDACTED>", "name": "ok"}
+    assert found == ["apiKey"]
+
+
+def test_redact_dict_secret_value_prefix():
+    data = {"header": "Bearer xyz", "url": "https://example.com"}
+    found = redact(data)
+    assert data["header"] == "<REDACTED>"
+    assert data["url"] == "https://example.com"
+    assert found == ["header"]
+
+
+def test_redact_list_values():
+    data = {"headers": ["Bearer xyz", "ok"], "plain": ["sk-abc"]}
+    found = redact(data)
+    assert data == {"headers": ["<REDACTED>", "ok"], "plain": ["<REDACTED>"]}
+    assert sorted(found) == ["headers[0]", "plain[0]"]
+
+
+def test_redact_nested():
+    data = {"outer": [{"token": "ghp_abcdef"}]}
+    found = redact(data)
+    assert data == {"outer": [{"token": "<REDACTED>"}]}
+    assert found == ["outer[0].token"]
+
+
+def test_redact_clean_data_untouched():
+    data = {"maxTokens": 4096, "models": ["claude-fable-5"], "ask-user": {"enabled": True}}
+    before = json.dumps(data)
+    assert redact(data) == []
+    assert json.dumps(data) == before
+
+
+def test_scan_copied_json_redacts_and_reports(tmp_path):
+    config = tmp_path / "config"
+    nested = config / "pi-agent" / "extensions"
+    nested.mkdir(parents=True)
+    (nested / "probe.json").write_text(
+        json.dumps({"apiKey": "sk-proj-test", "safe": "ok"}), encoding="utf-8"
+    )
+    (config / "clean.json").write_text(json.dumps({"a": 1}), encoding="utf-8")
+    (config / "invalid.json").write_text("{pas du json", encoding="utf-8")
+
+    found = scan_copied_json(config)
+
+    assert found == ["pi-agent/extensions/probe.json:apiKey"]
+    rewritten = json.loads((nested / "probe.json").read_text(encoding="utf-8"))
+    assert rewritten == {"apiKey": "<REDACTED>", "safe": "ok"}
+    assert json.loads((config / "clean.json").read_text(encoding="utf-8")) == {"a": 1}
+    assert (config / "invalid.json").read_text(encoding="utf-8") == "{pas du json"
