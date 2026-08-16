@@ -11,12 +11,50 @@ Dépôt officiel de la configuration Pi (persona Maestro, extensions, prompts, s
 
 ```bash
 cd pi-config
-uv venv          # cree .venv/ dans le repo avec Python 3.12+
+uv sync          # cree .venv/, installe le package pi_config_tools (editable) et les outils dev
 ```
 
-## Les trois scripts
+## Structure du code
 
-Tous en Python stdlib pur (aucune dépendance), lancés avec `uv run` :
+```
+src/pi_config_tools/   # logique metier (package installe en editable)
+  paths.py             # chemins, redirigeables via PI_CONFIG_HOME / PI_CONFIG_REPO (tests)
+  fsops.py             # copy_tree/copy_file avec exclusions
+  secrets.py           # detection et caviardage de secrets dans les JSON
+  sync.py, restore.py, backup.py   # un main(argv) testable par commande
+scripts/               # points d'entree fins (import + sys.exit(main()))
+tests/unit/            # fonctions pures et tmp_path, dont le gate de taille (test_standards.py)
+tests/integration/     # chaque module contre une fausse arborescence en sandbox
+tests/e2e/             # cycle complet sync -> restore et backup via subprocess sur scripts/
+```
+
+Les wrappers `scripts/` sont conserves (plutot que des `[project.scripts]`) pour que les
+commandes documentees ici restent inchangees.
+
+## Standards de qualite (appliques par l'outillage)
+
+- `ruff` (regles E/F/W/I/PL/C90, ligne 100) : complexite cyclomatique **max 8**,
+  **max 30 instructions** et **max 5 arguments** par fonction — `uv run ruff check .`
+  doit passer a zero violation.
+- `tests/unit/test_standards.py` fait echouer la suite si un module de `src/` depasse
+  **200 lignes** ou un script de `scripts/` depasse **20 lignes** : la limite de taille
+  est un test, pas une promesse.
+
+## Tests
+
+```bash
+uv run pytest                     # toute la suite
+uv run pytest tests/unit          # unitaires (purs, tmp_path)
+uv run pytest tests/integration   # modules contre un sandbox (jamais la vraie config)
+uv run pytest tests/e2e           # cycle complet via les scripts reels (subprocess)
+```
+
+Les tests ne touchent jamais la vraie config : les chemins sont rediriges vers des
+dossiers temporaires via `PI_CONFIG_HOME` / `PI_CONFIG_REPO`.
+
+## Les trois commandes
+
+Logique en Python stdlib pur (`dependencies = []` ; ruff/pytest en groupe dev uniquement) :
 
 | Script | Rôle |
 | --- | --- |
