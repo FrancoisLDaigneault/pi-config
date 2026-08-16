@@ -60,7 +60,12 @@ def redact(node, path=""):
                 found += redact(value, where)
     elif isinstance(node, list):
         for i, value in enumerate(node):
-            found += redact(value, f"{path}[{i}]")
+            where = f"{path}[{i}]"
+            if isinstance(value, str) and SECRET_VALUE_RE.match(value):
+                node[i] = "<REDACTED>"
+                found.append(where)
+            else:
+                found += redact(value, where)
     return found
 
 
@@ -82,6 +87,26 @@ def sync_json_with_audit(rel: str) -> list[str]:
         )
     else:
         shutil.copy2(src, dst)
+    return found
+
+
+def scan_copied_json() -> list[str]:
+    """Audit post-copie : caviarde les secrets dans tous les *.json copies dans config/."""
+    found = []
+    for path in sorted(CONFIG.rglob("*.json")):
+        rel = path.relative_to(CONFIG).as_posix()
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            print(f"  info : {rel} non analysable en JSON, laisse tel quel")
+            continue
+        hits = redact(data)
+        if hits:
+            path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            print(
+                f"  ATTENTION {rel} : {len(hits)} valeur(s) caviardee(s) : {', '.join(hits)}"
+            )
+            found += [f"{rel}:{h}" for h in hits]
     return found
 
 
@@ -145,6 +170,9 @@ def main() -> int:
         print(f"  agents-skills/ : {n} fichier(s)")
     else:
         print("  attention : .agents/skills absent, ignore")
+
+    # 4. Audit secrets sur tous les JSON copies (y compris via copy_tree)
+    redacted += scan_copied_json()
 
     print(f"\nSync termine : {total} fichier(s) dans {CONFIG}")
     if redacted:
