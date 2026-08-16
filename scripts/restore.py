@@ -1,9 +1,13 @@
 """Restaure la configuration versionnee (config/) vers les emplacements vifs.
 
-Usage : uv run scripts/restore.py            (simulation, rien n'est ecrit)
-        uv run scripts/restore.py --apply    (execution reelle)
+Usage : uv run scripts/restore.py                    (simulation, rien n'est ecrit)
+        uv run scripts/restore.py --apply            (execution reelle)
+        uv run scripts/restore.py --apply --patch    (inclut le patch context-mode)
 
 Ne touche JAMAIS auth.json.
+Le patch context-mode (patched-node_modules/) n'est restaure qu'avec --patch,
+APRES l'installation npm de Pi - sinon il creerait un node_modules partiel
+orphelin que l'installation ecraserait (voir README, restauration machine neuve).
 """
 
 import argparse
@@ -38,6 +42,11 @@ def main() -> int:
         action="store_true",
         help="simulation (comportement par defaut)",
     )
+    parser.add_argument(
+        "--patch",
+        action="store_true",
+        help="inclure le patch context-mode (a lancer APRES l'installation npm)",
+    )
     args = parser.parse_args()
     apply = args.apply and not args.dry_run
 
@@ -50,6 +59,12 @@ def main() -> int:
 
     count = 0
     for src_root, dst_root in MAPPINGS:
+        if src_root.name == "patched-node_modules" and not args.patch:
+            print(
+                "  info : patched-node_modules/ ignore (utiliser --patch APRES "
+                "l'installation npm, voir README)"
+            )
+            continue
         if not src_root.is_dir():
             print(f"  info : {src_root.name}/ absent du repo, ignore")
             continue

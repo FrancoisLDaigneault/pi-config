@@ -28,7 +28,7 @@ def main() -> int:
     parser.add_argument(
         "--destination",
         type=Path,
-        default=HOME / "pi-backups" / datetime.now().strftime("%Y-%m-%d_%H%M"),
+        default=HOME / "pi-backups" / datetime.now().strftime("%Y-%m-%d_%H%M%S"),
         help="dossier de destination (defaut : ~/pi-backups/horodate)",
     )
     args = parser.parse_args()
