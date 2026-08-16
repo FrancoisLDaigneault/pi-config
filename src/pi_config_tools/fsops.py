@@ -1,21 +1,13 @@
-"""Fonctions partagees par sync.py, restore.py et backup.py (stdlib uniquement)."""
+"""Copies de fichiers et d'arborescences avec exclusions (stdlib uniquement)."""
 
 import fnmatch
+import json
 import shutil
 from pathlib import Path
 
-HOME = Path.home()
-PI_AGENT = HOME / ".pi" / "agent"
-AGENTS_SKILLS = HOME / ".agents" / "skills"
-MEMPALACE = HOME / ".mempalace"
-REPO = Path(__file__).resolve().parent.parent
-CONFIG = REPO / "config"
+from pi_config_tools import paths
 
-# Chemin relatif (identique cote vif et cote repo) du fichier patche dans node_modules
-PATCHED_REL = Path("context-mode/build/adapters/pi/extension.js")
-CONTEXT_MODE_PKG = PI_AGENT / "npm" / "node_modules" / "context-mode" / "package.json"
-
-# Exclusions par nom, appliquees a toute profondeur
+# Exclusions par nom, appliquees a toute profondeur (regles cote repo)
 EXCLUDE_DIRS = {"node_modules", "sessions", "__pycache__", ".venv", ".git"}
 EXCLUDE_FILE_PATTERNS = [
     "auth.json",
@@ -59,10 +51,10 @@ def copy_file(src: Path, dst: Path) -> None:
 
 
 def context_mode_version() -> str:
-    import json
-
-    if CONTEXT_MODE_PKG.exists():
-        return json.loads(CONTEXT_MODE_PKG.read_text(encoding="utf-8")).get(
-            "version", "inconnue"
-        )
-    return "inconnue (package.json absent)"
+    pkg = paths.context_mode_pkg()
+    if not pkg.exists():
+        return "inconnue (package.json absent)"
+    try:
+        return json.loads(pkg.read_text(encoding="utf-8")).get("version", "inconnue")
+    except (OSError, json.JSONDecodeError):
+        return "inconnue (package.json illisible)"
