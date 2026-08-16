@@ -62,8 +62,16 @@ def test_patch_flag_includes_patched_node_modules(sandbox, monkeypatch, tmp_path
 
     assert main(["--apply", "--patch"]) == 0
     patched = (
-        fresh / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "build"
-        / "adapters" / "pi" / "extension.js"
+        fresh
+        / ".pi"
+        / "agent"
+        / "npm"
+        / "node_modules"
+        / "context-mode"
+        / "build"
+        / "adapters"
+        / "pi"
+        / "extension.js"
     )
     assert patched.read_text(encoding="utf-8") == "// patched"
     # Le README de patched-node_modules est une doc du repo : jamais restaure

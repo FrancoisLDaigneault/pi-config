@@ -17,7 +17,12 @@ def test_backup_sections_and_inclusions(sandbox, tmp_path, capsys):
     assert not (dest / "pi-agent" / "mcp-cache.json").exists()
     # Patch + version
     assert (
-        dest / "patched-node_modules" / "context-mode" / "build" / "adapters" / "pi"
+        dest
+        / "patched-node_modules"
+        / "context-mode"
+        / "build"
+        / "adapters"
+        / "pi"
         / "extension.js"
     ).is_file()
     version = dest / "patched-node_modules" / "context-mode-version.txt"

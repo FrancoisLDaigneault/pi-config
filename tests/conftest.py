@@ -32,7 +32,13 @@ def build_fake_home(home):
         json.dumps({"version": "9.9.9"}),
     )
     touch(
-        agent / "npm" / "node_modules" / "context-mode" / "build" / "adapters" / "pi"
+        agent
+        / "npm"
+        / "node_modules"
+        / "context-mode"
+        / "build"
+        / "adapters"
+        / "pi"
         / "extension.js",
         "// patched",
     )
