@@ -51,6 +51,13 @@ def build_fake_home(home):
     return home
 
 
+@pytest.fixture(autouse=True)
+def _isolate_real_config(tmp_path, monkeypatch):
+    """Defense en profondeur : sans sandbox, les chemins pointent vers un tmp inexistant."""
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path / "void" / "home"))
+    monkeypatch.setenv("PI_CONFIG_REPO", str(tmp_path / "void" / "repo"))
+
+
 @pytest.fixture
 def sandbox(tmp_path, monkeypatch):
     """(home, repo) rediriges via PI_CONFIG_HOME / PI_CONFIG_REPO."""
