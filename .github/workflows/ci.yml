@@ -6,14 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     # windows-latest : plateforme cible de l'outil (chemins, robocopy-era behaviors)
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run pytest -q
@@ -25,9 +30,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Scan full git history with gitleaks
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks_8.24.3_linux_x64.tar.gz
@@ -35,3 +41,28 @@ jobs:
           cd /tmp && grep ' gitleaks_8.24.3_linux_x64.tar.gz$' checksums.txt | sha256sum -c -
           tar -xzf /tmp/gitleaks_8.24.3_linux_x64.tar.gz -C /tmp gitleaks
           cd "$GITHUB_WORKSPACE" && /tmp/gitleaks git --redact -v .
+
+  pip-audit:
+    # audit de vulnerabilites sur l'environnement verrouille (uv.lock exporte puis audite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - run: uv export --no-emit-project --no-hashes --format requirements-txt -o /tmp/requirements.txt
+      - run: uvx pip-audit==2.10.1 --no-deps -r /tmp/requirements.txt
+
+  zizmor:
+    # audit statique des workflows GitHub Actions eux-memes; echoue sur toute trouvaille
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - run: uvx zizmor==1.29.0 .github/workflows/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

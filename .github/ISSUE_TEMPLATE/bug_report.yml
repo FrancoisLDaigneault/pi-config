@@ -1,0 +1,23 @@
+name: Rapport de bogue
+description: Signaler un comportement incorrect
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Ce qui se passe et ce qui devrait se passer.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Commandes exactes et sortie obtenue.
+    validations:
+      required: true
+  - type: input
+    id: environnement
+    attributes:
+      label: Environnement
+      description: OS, version de Python, version de uv.
