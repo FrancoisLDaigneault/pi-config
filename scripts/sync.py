@@ -56,7 +56,11 @@ def sync_json_with_audit(rel: str) -> list[str]:
     """Copie un JSON de .pi/agent vers config/pi-agent en caviardant les secrets eventuels."""
     src = PI_AGENT / rel
     dst = CONFIG / "pi-agent" / rel
-    data = json.loads(src.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(src.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  erreur : {rel} illisible ou JSON invalide ({exc}) — sync interrompu")
+        sys.exit(1)
     found = redact(data)
     dst.parent.mkdir(parents=True, exist_ok=True)
     if found:
@@ -69,7 +73,11 @@ def sync_json_with_audit(rel: str) -> list[str]:
 
 def main() -> int:
     if CONFIG.exists():
-        shutil.rmtree(CONFIG)
+        try:
+            shutil.rmtree(CONFIG)
+        except OSError as exc:
+            print(f"  erreur : impossible de nettoyer {CONFIG} ({exc})")
+            return 1
 
     total = 0
     redacted = []

@@ -36,7 +36,7 @@ def main() -> int:
         return 1
 
     mode = "APPLICATION" if apply else "SIMULATION (--apply pour executer)"
-    print(f"Restauration — mode {mode}\n")
+    print(f"Restauration - mode {mode}\n")
 
     count = 0
     for src_root, dst_root in MAPPINGS:

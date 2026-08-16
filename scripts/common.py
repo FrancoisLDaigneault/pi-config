@@ -31,16 +31,21 @@ def is_excluded_file(name: str) -> bool:
     return any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_FILE_PATTERNS)
 
 
-def copy_tree(src: Path, dst: Path) -> int:
-    """Copie recursive src -> dst en appliquant les exclusions. Retourne le nombre de fichiers copies."""
+def copy_tree(src: Path, dst: Path, exclude_dirs=None, exclude_files=None) -> int:
+    """Copie recursive src -> dst en appliquant les exclusions (defaut : regles repo).
+    Retourne le nombre de fichiers copies."""
+    if exclude_dirs is None:
+        exclude_dirs = EXCLUDE_DIRS
+    if exclude_files is None:
+        exclude_files = EXCLUDE_FILE_PATTERNS
     count = 0
     for item in src.iterdir():
         if item.is_dir():
-            if item.name in EXCLUDE_DIRS:
+            if item.name in exclude_dirs:
                 continue
-            count += copy_tree(item, dst / item.name)
+            count += copy_tree(item, dst / item.name, exclude_dirs, exclude_files)
         elif item.is_file():
-            if is_excluded_file(item.name):
+            if any(fnmatch.fnmatch(item.name, pat) for pat in exclude_files):
                 continue
             dst.mkdir(parents=True, exist_ok=True)
             shutil.copy2(item, dst / item.name)

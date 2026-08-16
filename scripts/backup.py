@@ -47,21 +47,18 @@ def main() -> int:
             totals[name] = 0
             failed.append(name)
 
-    # 1. Config Pi (auth.json inclus : backup local, pas un repo)
+    # 1. Config Pi — memes exclusions que l'ancien backup-pi.ps1 (auth.json et
+    # settings.backup* INCLUS : c'est un backup local complet, pas un repo)
     def do_pi_agent() -> int:
         if not PI_AGENT.is_dir():
             print(f"  attention : {PI_AGENT} absent, section ignoree")
             return 0
-        return copy_tree_keep_auth(PI_AGENT, dest / "pi-agent")
-
-    # copy_tree exclut auth.json (regle repo) ; ici on le rajoute car le backup local doit le garder
-    def copy_tree_keep_auth(src: Path, dst: Path) -> int:
-        n = copy_tree(src, dst)
-        auth = src / "auth.json"
-        if auth.is_file():
-            copy_file(auth, dst / "auth.json")
-            n += 1
-        return n
+        return copy_tree(
+            PI_AGENT,
+            dest / "pi-agent",
+            exclude_dirs={"node_modules", "sessions"},
+            exclude_files=["mcp-cache.json", "run-history.jsonl"],
+        )
 
     # 2. Fichier patche context-mode
     def do_patch() -> int:
@@ -87,14 +84,14 @@ def main() -> int:
                 f"  ATTENTION MemPalace : fichiers SQLite -wal/-shm detectes ({', '.join(wal_shm)}). "
                 "Fermez Pi/mempalace avant le backup pour une copie coherente."
             )
-        return copy_tree(MEMPALACE, dest / "mempalace")
+        return copy_tree(MEMPALACE, dest / "mempalace", exclude_dirs=set(), exclude_files=[])
 
     # 4. Skills utilisateur
     def do_skills() -> int:
         if not AGENTS_SKILLS.is_dir():
             print(f"  attention : {AGENTS_SKILLS} absent, section ignoree")
             return 0
-        return copy_tree(AGENTS_SKILLS, dest / "agents-skills")
+        return copy_tree(AGENTS_SKILLS, dest / "agents-skills", exclude_dirs={"__pycache__"}, exclude_files=["*.pyc"])
 
     section("pi-agent", do_pi_agent)
     section("patch context-mode", do_patch)
