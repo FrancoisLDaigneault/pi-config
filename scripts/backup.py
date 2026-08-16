@@ -64,12 +64,15 @@ def main() -> int:
     def do_patch() -> int:
         patched = PI_AGENT / "npm" / "node_modules" / PATCHED_REL
         if not patched.is_file():
-            print(f"  attention : patch context-mode absent ({patched}), section ignoree")
+            print(
+                f"  attention : patch context-mode absent ({patched}), section ignoree"
+            )
             return 0
         copy_file(patched, dest / "patched-node_modules" / PATCHED_REL)
         version_file = dest / "patched-node_modules" / "context-mode-version.txt"
         version_file.write_text(
-            f"context-mode version au moment du backup : {context_mode_version()}\n", encoding="utf-8"
+            f"context-mode version au moment du backup : {context_mode_version()}\n",
+            encoding="utf-8",
         )
         return 2
 
@@ -78,20 +81,29 @@ def main() -> int:
         if not MEMPALACE.is_dir():
             print(f"  attention : {MEMPALACE} absent, section ignoree")
             return 0
-        wal_shm = [p.name for p in MEMPALACE.rglob("*") if p.name.endswith(("-wal", "-shm"))]
+        wal_shm = [
+            p.name for p in MEMPALACE.rglob("*") if p.name.endswith(("-wal", "-shm"))
+        ]
         if wal_shm:
             print(
                 f"  ATTENTION MemPalace : fichiers SQLite -wal/-shm detectes ({', '.join(wal_shm)}). "
                 "Fermez Pi/mempalace avant le backup pour une copie coherente."
             )
-        return copy_tree(MEMPALACE, dest / "mempalace", exclude_dirs=set(), exclude_files=[])
+        return copy_tree(
+            MEMPALACE, dest / "mempalace", exclude_dirs=set(), exclude_files=[]
+        )
 
     # 4. Skills utilisateur
     def do_skills() -> int:
         if not AGENTS_SKILLS.is_dir():
             print(f"  attention : {AGENTS_SKILLS} absent, section ignoree")
             return 0
-        return copy_tree(AGENTS_SKILLS, dest / "agents-skills", exclude_dirs={"__pycache__"}, exclude_files=["*.pyc"])
+        return copy_tree(
+            AGENTS_SKILLS,
+            dest / "agents-skills",
+            exclude_dirs={"__pycache__"},
+            exclude_files=["*.pyc"],
+        )
 
     section("pi-agent", do_pi_agent)
     section("patch context-mode", do_patch)

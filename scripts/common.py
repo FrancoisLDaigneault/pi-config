@@ -62,5 +62,7 @@ def context_mode_version() -> str:
     import json
 
     if CONTEXT_MODE_PKG.exists():
-        return json.loads(CONTEXT_MODE_PKG.read_text(encoding="utf-8")).get("version", "inconnue")
+        return json.loads(CONTEXT_MODE_PKG.read_text(encoding="utf-8")).get(
+            "version", "inconnue"
+        )
     return "inconnue (package.json absent)"

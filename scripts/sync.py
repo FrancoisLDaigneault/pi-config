@@ -31,7 +31,17 @@ AGENT_FILES = [
 ]
 
 # Detection de secrets dans les JSON de config avant inclusion
-SECRET_KEYS = {"apikey", "api_key", "token", "secret", "password", "authtoken", "accesstoken", "refreshtoken", "bearer"}
+SECRET_KEYS = {
+    "apikey",
+    "api_key",
+    "token",
+    "secret",
+    "password",
+    "authtoken",
+    "accesstoken",
+    "refreshtoken",
+    "bearer",
+}
 SECRET_VALUE_RE = re.compile(r"^(sk-|ghp_|gho_|github_pat_|xox[a-z]-|Bearer )")
 
 
@@ -41,7 +51,9 @@ def redact(node, path=""):
     if isinstance(node, dict):
         for key, value in node.items():
             where = f"{path}.{key}" if path else key
-            if isinstance(value, str) and (key.lower() in SECRET_KEYS or SECRET_VALUE_RE.match(value)):
+            if isinstance(value, str) and (
+                key.lower() in SECRET_KEYS or SECRET_VALUE_RE.match(value)
+            ):
                 node[key] = "<REDACTED>"
                 found.append(where)
             else:
@@ -65,7 +77,9 @@ def sync_json_with_audit(rel: str) -> list[str]:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if found:
         dst.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        print(f"  ATTENTION {rel} : {len(found)} valeur(s) caviardee(s) : {', '.join(found)}")
+        print(
+            f"  ATTENTION {rel} : {len(found)} valeur(s) caviardee(s) : {', '.join(found)}"
+        )
     else:
         shutil.copy2(src, dst)
     return found
@@ -118,7 +132,9 @@ def main() -> int:
             encoding="utf-8",
         )
         total += 2
-        print(f"  patched-node_modules : extension.js + README (context-mode {version})")
+        print(
+            f"  patched-node_modules : extension.js + README (context-mode {version})"
+        )
     else:
         print("  attention : patch context-mode absent, ignore")
 
@@ -132,7 +148,9 @@ def main() -> int:
 
     print(f"\nSync termine : {total} fichier(s) dans {CONFIG}")
     if redacted:
-        print(f"ATTENTION : {len(redacted)} secret(s) caviarde(s) - voir README pour la restauration.")
+        print(
+            f"ATTENTION : {len(redacted)} secret(s) caviarde(s) - voir README pour la restauration."
+        )
     return 0
 
 

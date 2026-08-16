@@ -25,9 +25,19 @@ def list_files(root: Path) -> list[Path]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Restaure config/ vers les emplacements vifs.")
-    parser.add_argument("--apply", action="store_true", help="executer reellement (defaut : simulation)")
-    parser.add_argument("--dry-run", action="store_true", help="simulation (comportement par defaut)")
+    parser = argparse.ArgumentParser(
+        description="Restaure config/ vers les emplacements vifs."
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="executer reellement (defaut : simulation)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="simulation (comportement par defaut)",
+    )
     args = parser.parse_args()
     apply = args.apply and not args.dry_run
 
@@ -48,7 +58,11 @@ def main() -> int:
             if src.name == "auth.json":
                 print(f"  IGNORE (securite) : {rel}")
                 continue
-            if src_root.name == "patched-node_modules" and src.name == "README.md" and len(rel.parts) == 1:
+            if (
+                src_root.name == "patched-node_modules"
+                and src.name == "README.md"
+                and len(rel.parts) == 1
+            ):
                 continue  # documentation du repo, pas un fichier a restaurer
             dst = dst_root / rel
             print(f"  {'copie' if apply else 'copierait'} : {rel}  ->  {dst}")
