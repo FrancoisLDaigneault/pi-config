@@ -23,7 +23,7 @@ Draft a task contract for this work, then dispatch it to the right subagent:
 
 **Project obligations checklist** — verify before finalizing this contract:
 
-- If this dispatch CREATES a new project/repo: the contract must include NORTHSTAR.md (one measurable KPI per axis: speed, security, maintainability, scalability) and automated gates (lint/tests/secret scan in hooks and/or CI) in the first delivery — not "later".
+- If this dispatch CREATES a new project/repo (throwaway spikes/scratch excluded): the contract must include NORTHSTAR.md (one measurable KPI per axis: speed, security, maintainability, scalability) and automated gates (lint/tests/secret scan in hooks and/or CI) in the first delivery — not "later".
 - If this dispatch ENTERS an existing project: check that NORTHSTAR.md exists; if missing, flag it in the contract.
 - Remember: an obligation absent from the contract is invisible to both the worker AND the reviewer.
 
