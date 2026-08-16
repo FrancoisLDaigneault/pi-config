@@ -59,7 +59,7 @@ def sync_json_with_audit(rel: str) -> list[str]:
     try:
         data = json.loads(src.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"  erreur : {rel} illisible ou JSON invalide ({exc}) — sync interrompu")
+        print(f"  erreur : {rel} illisible ou JSON invalide ({exc}) - sync interrompu")
         sys.exit(1)
     found = redact(data)
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -132,7 +132,7 @@ def main() -> int:
 
     print(f"\nSync termine : {total} fichier(s) dans {CONFIG}")
     if redacted:
-        print(f"ATTENTION : {len(redacted)} secret(s) caviarde(s) — voir README pour la restauration.")
+        print(f"ATTENTION : {len(redacted)} secret(s) caviarde(s) - voir README pour la restauration.")
     return 0
 
 

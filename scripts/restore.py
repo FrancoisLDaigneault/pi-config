@@ -32,7 +32,7 @@ def main() -> int:
     apply = args.apply and not args.dry_run
 
     if not CONFIG.is_dir():
-        print(f"erreur : {CONFIG} absent — lancer d'abord uv run scripts/sync.py")
+        print(f"erreur : {CONFIG} absent - lancer d'abord uv run scripts/sync.py")
         return 1
 
     mode = "APPLICATION" if apply else "SIMULATION (--apply pour executer)"
