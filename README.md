@@ -1,5 +1,15 @@
 # pi-config
 
+[![CI](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/FrancoisLDaigneault/pi-config/security/code-scanning)
+[![Release](https://img.shields.io/github/v/release/FrancoisLDaigneault/pi-config)](https://github.com/FrancoisLDaigneault/pi-config/releases)
+[![License](https://img.shields.io/github/license/FrancoisLDaigneault/pi-config)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
+
 Official repository for the Pi configuration (Maestro persona, extensions, prompts, skills, settings). Goal: never lose the configuration, even after a Pi update or a machine reinstall.
 
 ## Prerequisites
