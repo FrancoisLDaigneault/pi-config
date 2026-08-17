@@ -43,3 +43,8 @@ testpaths = ["tests"]
 strict = true
 files = ["src", "scripts", "tests"]
 python_version = "3.12"
+
+[tool.pyright]
+# point pyright-based checkers (including editor integrations) at the uv venv
+venvPath = "."
+venv = ".venv"
