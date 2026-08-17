@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.3.1...v0.4.0) (2026-08-17)
+
+
+### Features
+
+* repo hygiene, coverage gate and release assets ([#11](https://github.com/FrancoisLDaigneault/pi-config/issues/11)) ([c2d1c91](https://github.com/FrancoisLDaigneault/pi-config/commit/c2d1c91a544707d807cc1f30ae72769fe56ee9d4))
+
 ## [0.3.1](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.3.0...v0.3.1) (2026-08-17)
 
 
