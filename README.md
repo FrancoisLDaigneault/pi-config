@@ -29,7 +29,7 @@ git config core.hooksPath hooks   # enables the versioned pre-commit hook (redo 
 
 With [just](https://just.systems) installed (`winget install Casey.Just`), the
 `justfile` wraps the common commands -- every one of them works standalone too:
-`just setup` (onboarding), `just check` (the three gates), `just sync`,
+`just setup` (onboarding), `just check` (the quality gates), `just sync`,
 `just restore [--apply]`, `just backup`. Run `just --list` for the summary.
 
 ## Code structure
@@ -57,16 +57,23 @@ commands documented here stay unchanged.
 - `tests/unit/test_standards.py` fails the suite if a module in `src/` exceeds
   **200 lines** or a script in `scripts/` exceeds **20 lines**: the size limit
   is a test, not a promise.
-- `tests/unit/test_language.py` fails the suite if any source or documentation
-  file contains accented (non-English) characters: everything is written in English.
+- `tests/unit/test_language.py` fails the suite if a scanned file contains
+  accented (non-English) characters. The scan covers a defined file set (the
+  Python trees, root docs, workflows, templates, justfile); generated or
+  third-party files (`CHANGELOG.md`, `config/`, `LICENSE`, `CODE_OF_CONDUCT.md`)
+  are excluded. The English-only rule itself applies to everything written here.
 
 These standards are **enforced automatically** at two levels:
 
-- **Pre-commit hook** (`hooks/pre-commit`, versioned): `ruff check` + the whole
-  test suite (~1 s) before every commit. Enable with: `git config core.hooksPath hooks`.
-- **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`,
-  ruff + the three test suites on `windows-latest`, plus a secret scan
-  (gitleaks) over the entire git history.
+- **Pre-commit hook** (`hooks/pre-commit`, versioned): `ruff check`,
+  `ruff format --check`, strict mypy and the whole test suite (with its 90%
+  branch-coverage floor) before every commit. Enable with:
+  `git config core.hooksPath hooks`.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
+  and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
+  `windows-latest` runs `uv sync --locked` then the same four commands as the
+  hook; separate Linux jobs run a full-history secret scan (gitleaks), a
+  dependency audit (pip-audit) and a workflow audit (zizmor).
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
 
@@ -86,7 +93,7 @@ folders via `PI_CONFIG_HOME` / `PI_CONFIG_REPO`.
 
 ## The three commands
 
-Logic in pure Python stdlib (`dependencies = []`; ruff/pytest in the dev group only):
+Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev group only):
 
 | Script | Role |
 | --- | --- |
@@ -96,13 +103,21 @@ Logic in pure Python stdlib (`dependencies = []`; ruff/pytest in the dev group o
 
 ## Recommended workflow before every Pi update
 
+`main` only accepts pull requests (a repository ruleset rejects direct pushes),
+so config syncs go through a branch:
+
 ```bash
 uv run scripts/backup.py     # full local safety net (close Pi first for MemPalace)
 uv run scripts/sync.py       # updates config/ in the repo
+git switch -c chore/sync-config
 git add -A
-git commit -m "chore: sync Pi config before update"
-git push
+git commit -m "chore: sync Pi config before update"   # the hook runs the quality gates
+git push -u origin chore/sync-config
+gh pr create --fill          # squash-merge once the checks are green
 ```
+
+This machine also runs a daily scheduled backup task (`pi-config-daily-backup`,
+19:00) as a machine-side safeguard; it is not installed by this repository.
 
 After an `npm update` of context-mode: the patched file `config/patched-node_modules/context-mode/build/adapters/pi/extension.js` is overwritten on the live side - restore it with `uv run scripts/restore.py --apply --patch` (see `config/patched-node_modules/README.md`).
 
@@ -131,3 +146,10 @@ Both are covered by `backup.py` **locally only**. Never upload a `pi-backups/` f
 ## Redacted secrets
 
 `sync.py` audits every config JSON before inclusion (keys `apiKey`, `token`, `secret`, etc. and values `sk-...`, `ghp_...`, `Bearer ...`). Any suspicious value is replaced with `<REDACTED>` and reported in the output. To restore a redacted file: get the real value from the source machine (or the local backup) and put it back by hand after `restore.py --apply`.
+
+## Release integrity
+
+Each [release](https://github.com/FrancoisLDaigneault/pi-config/releases) ships
+the wheel, the sdist, an SPDX SBOM, SHA-256 checksums and GitHub
+build-provenance attestations. See [SECURITY.md](SECURITY.md) for the
+verification commands.
