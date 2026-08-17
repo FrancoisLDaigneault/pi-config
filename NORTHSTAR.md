@@ -8,7 +8,7 @@ One KPI per axis, measurable, with a real current value. Updated whenever a meas
 | KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
 | Fresh-machine restore | 8-step documented procedure | < 30 min wall clock | Follow `README.md` "Restoring on a fresh machine" |
-| Test suite duration | 0.8 s (29 tests) | < 5 s | `uv run pytest -q` (CI gate) |
+| Test suite duration | 0.8 s (30 tests) | < 5 s | `uv run pytest -q` (CI gate) |
 
 ## Security
 
@@ -23,7 +23,7 @@ One KPI per axis, measurable, with a real current value. Updated whenever a meas
 | --- | --- | --- | --- |
 | Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit hook + CI) |
 | src module / script size | max 142 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
-| Green tests | 29 (15 unit / 12 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (hook + CI) |
+| Green tests | 30 (16 unit / 12 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (hook + CI) |
 
 ## Scalability
 
