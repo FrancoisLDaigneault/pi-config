@@ -25,6 +25,7 @@ def _is_secret_value(value: object) -> bool:
 
 
 def _is_secret_entry(key: str, value: object) -> bool:
+    # Replacing an already-redacted value would be a no-op; skipping it buys report idempotence.
     if not isinstance(value, str) or value == REDACTED:
         return False
     return key.lower() in SECRET_KEYS or bool(SECRET_VALUE_RE.match(value))

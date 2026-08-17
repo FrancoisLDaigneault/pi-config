@@ -62,7 +62,7 @@ def test_scan_copied_json_replaces_root_string_file(tmp_path: Path) -> None:
     found = scan_copied_json(config)
 
     assert found == ["token.json:<root>"]
-    assert json.loads((config / "token.json").read_text(encoding="utf-8")) == "<REDACTED>"
+    assert (config / "token.json").read_text(encoding="utf-8") == '"<REDACTED>"\n'
 
 
 def test_scan_copied_json_redacts_and_reports(tmp_path: Path) -> None:
