@@ -15,7 +15,9 @@ SECRET_KEYS = {
     "refreshtoken",
     "bearer",
 }
+# Keep _PATTERN_PREFIXES in tests/unit/test_secrets_properties.py in sync with this regex.
 SECRET_VALUE_RE = re.compile(r"^(sk-|ghp_|gho_|github_pat_|xox[a-z]-|Bearer )")
+REDACTED = "<REDACTED>"
 
 
 def _is_secret_value(value: object) -> bool:
@@ -33,7 +35,7 @@ def _redact_dict(node: dict[str, object], path: str) -> list[str]:
     for key, value in node.items():
         where = f"{path}.{key}" if path else key
         if _is_secret_entry(key, value):
-            node[key] = "<REDACTED>"
+            node[key] = REDACTED
             found.append(where)
         else:
             found += redact(value, where)
@@ -45,7 +47,7 @@ def _redact_list(node: list[object], path: str) -> list[str]:
     for i, value in enumerate(node):
         where = f"{path}[{i}]"
         if _is_secret_value(value):
-            node[i] = "<REDACTED>"
+            node[i] = REDACTED
             found.append(where)
         else:
             found += redact(value, where)
@@ -53,11 +55,17 @@ def _redact_list(node: list[object], path: str) -> list[str]:
 
 
 def redact(node: object, path: str = "") -> list[str]:
-    """Recursively redact suspicious values. Returns the list of redacted paths."""
+    """Recursively redact suspicious values. Returns the list of redacted paths.
+
+    A bare secret string at the root is reported but cannot be replaced in
+    place (strings are immutable); the caller performs that replacement.
+    """
     if isinstance(node, dict):
         return _redact_dict(node, path)
     if isinstance(node, list):
         return _redact_list(node, path)
+    if _is_secret_value(node):
+        return [path or "<root>"]
     return []
 
 
@@ -73,6 +81,8 @@ def scan_copied_json(config: Path) -> list[str]:
             continue
         hits = redact(data)
         if hits:
+            if isinstance(data, str):
+                data = REDACTED
             path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
             print(f"  WARNING {rel}: {len(hits)} value(s) redacted: {', '.join(hits)}")
             found += [f"{rel}:{h}" for h in hits]

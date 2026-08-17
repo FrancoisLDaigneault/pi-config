@@ -42,6 +42,17 @@ def test_redact_clean_data_untouched() -> None:
     assert json.dumps(data) == before
 
 
+def test_scan_copied_json_replaces_root_string_file(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "token.json").write_text(json.dumps("sk-live-abc123"), encoding="utf-8")
+
+    found = scan_copied_json(config)
+
+    assert found == ["token.json:<root>"]
+    assert json.loads((config / "token.json").read_text(encoding="utf-8")) == "<REDACTED>"
+
+
 def test_scan_copied_json_redacts_and_reports(tmp_path: Path) -> None:
     config = tmp_path / "config"
     nested = config / "pi-agent" / "extensions"
