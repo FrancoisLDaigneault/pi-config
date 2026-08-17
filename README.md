@@ -1,5 +1,15 @@
 # pi-config
 
+[![CI](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/FrancoisLDaigneault/pi-config/security/code-scanning)
+[![Release](https://img.shields.io/github/v/release/FrancoisLDaigneault/pi-config)](https://github.com/FrancoisLDaigneault/pi-config/releases)
+[![License](https://img.shields.io/github/license/FrancoisLDaigneault/pi-config)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
+
 Official repository for the Pi configuration (Maestro persona, extensions, prompts, skills, settings). Goal: never lose the configuration, even after a Pi update or a machine reinstall.
 
 ## Prerequisites
@@ -53,7 +63,7 @@ commands documented here stay unchanged.
 These standards are **enforced automatically** at two levels:
 
 - **Pre-commit hook** (`hooks/pre-commit`, versioned): `ruff check` + the whole
-  test suite (~0.6 s) before every commit. Enable with: `git config core.hooksPath hooks`.
+  test suite (~1 s) before every commit. Enable with: `git config core.hooksPath hooks`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`,
   ruff + the three test suites on `windows-latest`, plus a secret scan
   (gitleaks) over the entire git history.
@@ -63,11 +73,13 @@ The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORT
 ## Tests
 
 ```bash
-uv run pytest                     # the whole suite
-uv run pytest tests/unit          # unit (pure, tmp_path)
-uv run pytest tests/integration   # modules against a sandbox (never the real config)
-uv run pytest tests/e2e           # full cycle through the real scripts (subprocess)
+uv run pytest                              # the whole suite
+uv run pytest tests/unit --no-cov          # unit (pure, tmp_path)
+uv run pytest tests/integration --no-cov   # modules against a sandbox (never the real config)
+uv run pytest tests/e2e --no-cov           # full cycle through the real scripts (subprocess)
 ```
+
+Subset runs need `--no-cov`: the 90% coverage floor is enforced on the full suite only.
 
 The tests never touch the real config: paths are redirected to temporary
 folders via `PI_CONFIG_HOME` / `PI_CONFIG_REPO`.

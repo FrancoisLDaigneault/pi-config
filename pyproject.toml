@@ -16,6 +16,7 @@ packages = ["src/pi_config_tools"]
 dev = [
     "mypy>=2.3.1",
     "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.16.3",
 ]
 
@@ -38,6 +39,17 @@ max-args = 5
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Coverage rides every pytest run (pre-commit hook, CI, just check).
+# Measured baseline at introduction: 93% with branch coverage.
+addopts = "--cov=pi_config_tools --cov-fail-under=90"
+
+[tool.coverage.run]
+# Branch coverage is stricter than line coverage and still leaves headroom
+# above the 90% floor; untested conditionals matter in a backup/restore tool.
+branch = true
+
+[tool.coverage.report]
+show_missing = true
 
 [tool.mypy]
 strict = true

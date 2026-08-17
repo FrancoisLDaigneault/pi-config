@@ -24,6 +24,9 @@ def _explicit_files() -> list[Path]:
     return [
         REPO / "hooks" / "pre-commit",
         REPO / "justfile",
+        REPO / ".editorconfig",
+        REPO / ".gitattributes",
+        REPO / ".gitignore",
         REPO / "README.md",
         REPO / "CONTRIBUTING.md",
         REPO / "SECURITY.md",
