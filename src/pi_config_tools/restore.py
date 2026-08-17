@@ -60,9 +60,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument(
         "--apply", action="store_true", help="actually execute (default: simulation)"
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="simulation (default behavior)"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="simulation (default behavior)")
     parser.add_argument(
         "--patch",
         action="store_true",

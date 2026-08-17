@@ -132,9 +132,7 @@ def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup 
 
     print(f"\nSync done: {total} file(s) in {config}")
     if redacted:
-        print(
-            f"WARNING: {len(redacted)} secret(s) redacted - see README for restore instructions."
-        )
+        print(f"WARNING: {len(redacted)} secret(s) redacted - see README for restore instructions.")
     return 0
 
 
