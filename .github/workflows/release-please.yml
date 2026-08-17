@@ -54,7 +54,8 @@ jobs:
         with:
           subject-path: dist/*
       - name: Upload assets to the release
-        run: gh release upload "$TAG" dist/*
+        run: gh release upload "$TAG" dist/* --clobber -R "$REPO"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.release-please.outputs.tag_name }}
+          REPO: ${{ github.repository }}
