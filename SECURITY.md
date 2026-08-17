@@ -2,7 +2,9 @@
 
 ## Supported versions
 
-Only the latest published version (the `main` branch) is supported.
+Only the latest [GitHub release](https://github.com/FrancoisLDaigneault/pi-config/releases)
+is supported. `main` is the development branch; fixes land there first and ship
+with the next release.
 
 ## Reporting a vulnerability
 
@@ -11,3 +13,22 @@ Do not open a public issue. Use GitHub's private reporting:
 ([GitHub Security Advisories](https://github.com/FrancoisLDaigneault/pi-config/security/advisories/new)).
 
 You will receive an initial response within 7 business days.
+
+## Automated controls
+
+Every PR and every push to `main` (plus a weekly scheduled run) is scanned by
+gitleaks (full git history), pip-audit and zizmor; weekly CodeQL analysis,
+GitHub secret scanning with push protection, and weekly Dependabot updates run
+on top.
+
+## Verifying release assets
+
+Each release ships the wheel, the sdist, an SPDX SBOM (`sbom.spdx.json`),
+SHA-256 checksums (`SHA256SUMS`) and GitHub build-provenance attestations.
+To verify a downloaded asset:
+
+```bash
+gh attestation verify pi_config_tools-<version>-py3-none-any.whl \
+  --repo FrancoisLDaigneault/pi-config
+sha256sum --check SHA256SUMS   # inside the folder holding the downloaded assets
+```

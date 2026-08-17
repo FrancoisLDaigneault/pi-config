@@ -6,7 +6,7 @@ setup:
     uv sync
     git config core.hooksPath hooks
 
-# Run the quality gates (same as the pre-commit hook and CI)
+# Run the quality gates (same quality commands as the pre-commit hook and the CI quality job)
 check:
     uv run ruff check .
     uv run ruff format --check .
