@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.4...v0.4.5) (2026-08-17)
+
+
+### Documentation
+
+* record signature rule activation ([#24](https://github.com/FrancoisLDaigneault/pi-config/issues/24)) ([fc6497d](https://github.com/FrancoisLDaigneault/pi-config/commit/fc6497d1d80a89cf1473bdf5192486bc1f581a74))
+
 ## [0.4.4](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.3...v0.4.4) (2026-08-17)
 
 
