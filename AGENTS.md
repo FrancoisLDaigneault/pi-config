@@ -59,3 +59,5 @@ SPDX SBOM, SHA-256 checksums, provenance attestation).
   `GITHUB_TOKEN`). Inspect the PR diff and rely on post-merge CI on `main`.
 - CRLF warnings on Windows are checkout-side only; committed blobs are LF
   (`.gitattributes` enforces `eol=lf`).
+- Repo-local SSH commit signing is configured (`commit.gpgsign true`);
+  commits sign automatically - do not disable or bypass it (ADR-0010).
