@@ -13,11 +13,11 @@ helper and audited the whole module graph.
 
 Keep the duplication. A shared `copy_section` helper would need 4-5
 parameters and would simplify no call site - duplication is cheaper than that
-abstraction. The module graph stays a strict two-layer DAG (stdlib-only
-leaves `paths` and `secrets`; the three command modules never import each
-other), and the call-time env-var seam in `paths.py` remains the single test
-seam serving unit, integration and e2e tiers alike. No CLI framework, no
-config object.
+abstraction. The module graph stays a strict DAG: the three command modules
+sit over the `fsops` helper, which sits over the stdlib-only leaves `paths`
+and `secrets` (the command modules never import each other). The call-time
+env-var seam in `paths.py` remains the single test seam serving unit,
+integration and e2e tiers alike. No CLI framework, no config object.
 
 ## Consequences
 

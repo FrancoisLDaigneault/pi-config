@@ -107,5 +107,6 @@ its release PRs. Do not flip it back to `false`: that reintroduces the
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/actions/permissions/workflow \
-  -X PUT -F can_approve_pull_request_reviews=true
+  -X PUT -f default_workflow_permissions=read \
+  -F can_approve_pull_request_reviews=true
 ```
