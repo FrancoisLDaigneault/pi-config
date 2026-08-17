@@ -9,6 +9,7 @@ setup:
 # Run the three quality gates (same as the pre-commit hook and CI)
 check:
     uv run ruff check .
+    uv run ruff format --check .
     uv run mypy
     uv run pytest -q
 
