@@ -1,10 +1,21 @@
 """Shared fixtures: fake live Pi config + path redirection via environment variables."""
 
 import json
+import os
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from hypothesis import settings
+
+# Hypothesis runs deterministically by default so the pre-commit hook, CI and
+# `just check` all see the exact same examples on every run; set
+# HYPOTHESIS_PROFILE=explore for a randomized, larger local search. deadline is
+# disabled to absorb Windows CI timing variance; the budget is bounded by
+# max_examples and the strategies' size caps instead.
+settings.register_profile("deterministic", derandomize=True, max_examples=50, deadline=None)
+settings.register_profile("explore", max_examples=300, deadline=None)
+settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "deterministic"))
 
 
 def touch(path: Path, content: str = "x") -> None:
