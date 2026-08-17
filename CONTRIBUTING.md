@@ -49,8 +49,9 @@ with `uv sync --locked` to prove the lockfile is reproducible.
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 are mandatory. The type drives the release: `feat:` bumps the minor version,
-`fix:` bumps the patch, and a breaking change bumps the major; `docs:`, `ci:`,
-`chore:`, `refactor:` and `test:` do not trigger a release by themselves.
+`fix:` and `docs:` bump the patch (`docs:` commits appear in a Documentation
+changelog section), and a breaking change bumps the major; `ci:`, `chore:`,
+`refactor:` and `test:` do not trigger a release by themselves.
 release-please opens and updates the release PR from these commits; merging
 that PR creates the tag and the GitHub release and uploads the release assets
 (wheel, sdist, SBOM, checksums, attestations).
