@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.2.0...v0.3.0) (2026-08-17)
+
+
+### Features
+
+* English-only codebase and docs with automated language gate ([#4](https://github.com/FrancoisLDaigneault/pi-config/issues/4)) ([70a913e](https://github.com/FrancoisLDaigneault/pi-config/commit/70a913e1fc9dde16c657594c262231730e00ecbd))
+
 ## 0.2.0 (2026-08-17)
 
 
