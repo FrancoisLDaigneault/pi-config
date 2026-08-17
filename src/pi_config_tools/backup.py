@@ -1,9 +1,9 @@
-"""Sauvegarde complete locale de Pi (config + patch + MemPalace + skills).
+"""Full local backup of Pi (config + patch + MemPalace + skills).
 
-Usage : uv run scripts/backup.py [--destination DOSSIER]
+Usage: uv run scripts/backup.py [--destination FOLDER]
 
-Remplace l'ancien backup-pi.ps1. Chemins absents = avertissement, pas d'echec.
-Code de sortie 1 si au moins une section a echoue.
+Replaces the old backup-pi.ps1. Missing paths = warning, not failure.
+Exit code 1 if at least one section failed.
 """
 
 import argparse
@@ -21,10 +21,10 @@ def default_destination(now: datetime | None = None) -> Path:
 
 
 def _backup_pi_agent(dest: Path) -> int:
-    """Config Pi - memes exclusions que l'ancien backup-pi.ps1 (auth.json et
-    settings.backup* INCLUS : c'est un backup local complet, pas un repo)."""
+    """Pi config - same exclusions as the old backup-pi.ps1 (auth.json and
+    settings.backup* INCLUDED: this is a full local backup, not a repo)."""
     if not paths.pi_agent().is_dir():
-        print(f"  attention : {paths.pi_agent()} absent, section ignoree")
+        print(f"  warning: {paths.pi_agent()} missing, section skipped")
         return 0
     return copy_tree(
         paths.pi_agent(),
@@ -37,12 +37,12 @@ def _backup_pi_agent(dest: Path) -> int:
 def _backup_patch(dest: Path) -> int:
     patched = paths.patched_live()
     if not patched.is_file():
-        print(f"  attention : patch context-mode absent ({patched}), section ignoree")
+        print(f"  warning: context-mode patch missing ({patched}), section skipped")
         return 0
     copy_file(patched, dest / "patched-node_modules" / paths.PATCHED_REL)
     version_file = dest / "patched-node_modules" / "context-mode-version.txt"
     version_file.write_text(
-        f"context-mode version au moment du backup : {context_mode_version()}\n",
+        f"context-mode version at backup time: {context_mode_version()}\n",
         encoding="utf-8",
     )
     return 2
@@ -51,20 +51,20 @@ def _backup_patch(dest: Path) -> int:
 def _backup_mempalace(dest: Path) -> int:
     root = paths.mempalace()
     if not root.is_dir():
-        print(f"  attention : {root} absent, section ignoree")
+        print(f"  warning: {root} missing, section skipped")
         return 0
     wal_shm = [p.name for p in root.rglob("*") if p.name.endswith(("-wal", "-shm"))]
     if wal_shm:
         print(
-            f"  ATTENTION MemPalace : fichiers SQLite -wal/-shm detectes ({', '.join(wal_shm)}). "
-            "Fermez Pi/mempalace avant le backup pour une copie coherente."
+            f"  WARNING MemPalace: SQLite -wal/-shm files detected ({', '.join(wal_shm)}). "
+            "Close Pi/mempalace before the backup for a consistent copy."
         )
     return copy_tree(root, dest / "mempalace", exclude_dirs=set(), exclude_files=[])
 
 
 def _backup_skills(dest: Path) -> int:
     if not paths.agents_skills().is_dir():
-        print(f"  attention : {paths.agents_skills()} absent, section ignoree")
+        print(f"  warning: {paths.agents_skills()} missing, section skipped")
         return 0
     return copy_tree(
         paths.agents_skills(),
@@ -76,47 +76,47 @@ def _backup_skills(dest: Path) -> int:
 
 SECTIONS = [
     ("pi-agent", _backup_pi_agent),
-    ("patch context-mode", _backup_patch),
+    ("context-mode patch", _backup_patch),
     ("mempalace", _backup_mempalace),
     ("agents-skills", _backup_skills),
 ]
 
 
 def _print_summary(totals: dict[str, int]) -> None:
-    print("\n=== Resume du backup ===")
+    print("\n=== Backup summary ===")
     for name, n in totals.items():
-        print(f"  {name:<20} {n} fichier(s)")
-    print(f"  {'TOTAL':<20} {sum(totals.values())} fichier(s)")
-    print("\nATTENTION : pi-agent/auth.json contient des identifiants sensibles.")
-    print("Ne pas uploader ce backup en clair (cloud, repo git, etc.).")
+        print(f"  {name:<20} {n} file(s)")
+    print(f"  {'TOTAL':<20} {sum(totals.values())} file(s)")
+    print("\nWARNING: pi-agent/auth.json contains sensitive credentials.")
+    print("Do not upload this backup unencrypted (cloud, git repo, etc.).")
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Sauvegarde complete locale de Pi.")
+    parser = argparse.ArgumentParser(description="Full local backup of Pi.")
     parser.add_argument(
         "--destination",
         type=Path,
         default=None,
-        help="dossier de destination (defaut : ~/pi-backups/horodate)",
+        help="destination folder (default: ~/pi-backups/<timestamp>)",
     )
     args = parser.parse_args(argv)
     dest = args.destination if args.destination is not None else default_destination()
     dest.mkdir(parents=True, exist_ok=True)
-    print(f"Sauvegarde vers : {dest}\n")
+    print(f"Backing up to: {dest}\n")
 
     totals: dict[str, int] = {}
     failed: list[str] = []
     for name, fn in SECTIONS:
         try:
             totals[name] = fn(dest)
-        except Exception as exc:  # une section en echec ne doit pas stopper les autres
-            print(f"  ERREUR {name} : {exc}")
+        except Exception as exc:  # a failing section must not stop the others
+            print(f"  ERROR {name}: {exc}")
             totals[name] = 0
             failed.append(name)
 
     _print_summary(totals)
     if failed:
-        print(f"\nERREURS dans section(s) : {', '.join(failed)}")
+        print(f"\nERRORS in section(s): {', '.join(failed)}")
         return 1
     return 0
 

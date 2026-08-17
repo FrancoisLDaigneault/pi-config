@@ -1,4 +1,4 @@
-"""Copies de fichiers et d'arborescences avec exclusions (stdlib uniquement)."""
+"""File and tree copies with exclusions (stdlib only)."""
 
 import fnmatch
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pi_config_tools import paths
 
-# Exclusions par nom, appliquees a toute profondeur (regles cote repo)
+# Name-based exclusions, applied at any depth (repo-side rules)
 EXCLUDE_DIRS = {"node_modules", "sessions", "__pycache__", ".venv", ".git"}
 EXCLUDE_FILE_PATTERNS = [
     "auth.json",
@@ -29,8 +29,8 @@ def copy_tree(
     exclude_dirs: set[str] | None = None,
     exclude_files: list[str] | None = None,
 ) -> int:
-    """Copie recursive src -> dst en appliquant les exclusions (defaut : regles repo).
-    Retourne le nombre de fichiers copies."""
+    """Recursively copy src -> dst applying the exclusions (default: repo rules).
+    Returns the number of files copied."""
     if exclude_dirs is None:
         exclude_dirs = EXCLUDE_DIRS
     if exclude_files is None:
@@ -58,9 +58,9 @@ def copy_file(src: Path, dst: Path) -> None:
 def context_mode_version() -> str:
     pkg = paths.context_mode_pkg()
     if not pkg.exists():
-        return "inconnue (package.json absent)"
+        return "unknown (package.json missing)"
     try:
-        version: str = json.loads(pkg.read_text(encoding="utf-8")).get("version", "inconnue")
+        version: str = json.loads(pkg.read_text(encoding="utf-8")).get("version", "unknown")
         return version
     except (OSError, json.JSONDecodeError):
-        return "inconnue (package.json illisible)"
+        return "unknown (package.json unreadable)"

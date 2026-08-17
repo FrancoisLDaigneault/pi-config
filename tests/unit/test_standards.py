@@ -1,4 +1,4 @@
-"""La limite de taille des modules est un test, pas une promesse."""
+"""The module size limit is a test, not a promise."""
 
 from pathlib import Path
 
@@ -18,15 +18,15 @@ def _line_count(path: Path) -> int:
 
 def test_src_modules_max_200_lines() -> None:
     modules = sorted(SRC.glob("*.py"))
-    assert modules, f"aucun module trouve sous {SRC}"
+    assert modules, f"no module found under {SRC}"
     for module in modules:
         n = _line_count(module)
-        assert n <= MAX_MODULE_LINES, f"{module.name} : {n} lignes (max {MAX_MODULE_LINES})"
+        assert n <= MAX_MODULE_LINES, f"{module.name}: {n} lines (max {MAX_MODULE_LINES})"
 
 
 def test_scripts_max_20_lines() -> None:
     scripts = sorted(SCRIPTS.glob("*.py"))
-    assert scripts, f"aucun script trouve sous {SCRIPTS}"
+    assert scripts, f"no script found under {SCRIPTS}"
     for script in scripts:
         n = _line_count(script)
-        assert n <= MAX_SCRIPT_LINES, f"{script.name} : {n} lignes (max {MAX_SCRIPT_LINES})"
+        assert n <= MAX_SCRIPT_LINES, f"{script.name}: {n} lines (max {MAX_SCRIPT_LINES})"

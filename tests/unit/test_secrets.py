@@ -1,4 +1,4 @@
-"""Tests unitaires du caviardage de secrets (fonctions pures + tmp_path)."""
+"""Unit tests for secret redaction (pure functions + tmp_path)."""
 
 import json
 from pathlib import Path
@@ -50,7 +50,7 @@ def test_scan_copied_json_redacts_and_reports(tmp_path: Path) -> None:
         json.dumps({"apiKey": "sk-proj-test", "safe": "ok"}), encoding="utf-8"
     )
     (config / "clean.json").write_text(json.dumps({"a": 1}), encoding="utf-8")
-    (config / "invalid.json").write_text("{pas du json", encoding="utf-8")
+    (config / "invalid.json").write_text("{not json", encoding="utf-8")
 
     found = scan_copied_json(config)
 
@@ -58,4 +58,4 @@ def test_scan_copied_json_redacts_and_reports(tmp_path: Path) -> None:
     rewritten = json.loads((nested / "probe.json").read_text(encoding="utf-8"))
     assert rewritten == {"apiKey": "<REDACTED>", "safe": "ok"}
     assert json.loads((config / "clean.json").read_text(encoding="utf-8")) == {"a": 1}
-    assert (config / "invalid.json").read_text(encoding="utf-8") == "{pas du json"
+    assert (config / "invalid.json").read_text(encoding="utf-8") == "{not json"

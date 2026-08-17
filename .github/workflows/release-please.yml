@@ -8,8 +8,8 @@ permissions: {}
 
 jobs:
   release-please:
-    # ouvre/actualise une PR de release a partir des Conventional Commits;
-    # release-type python met a jour la version dans pyproject.toml et le CHANGELOG
+    # opens/refreshes a release PR from the Conventional Commits;
+    # release-type python updates the version in pyproject.toml and the CHANGELOG
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

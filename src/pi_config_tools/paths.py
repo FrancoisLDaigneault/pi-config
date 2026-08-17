@@ -1,14 +1,14 @@
-"""Chemins de la configuration Pi.
+"""Pi configuration paths.
 
-Les racines sont resolues a l'appel (pas a l'import) et redirigeables pour les
-tests via les variables d'environnement PI_CONFIG_HOME (racine utilisateur) et
-PI_CONFIG_REPO (racine du depot contenant config/).
+Roots are resolved at call time (not at import) and can be redirected for
+tests via the PI_CONFIG_HOME (user root) and PI_CONFIG_REPO (root of the
+repository containing config/) environment variables.
 """
 
 import os
 from pathlib import Path
 
-# Chemin relatif (identique cote vif et cote repo) du fichier patche dans node_modules
+# Relative path (identical on the live side and the repo side) of the patched file in node_modules
 PATCHED_REL = Path("context-mode/build/adapters/pi/extension.js")
 
 

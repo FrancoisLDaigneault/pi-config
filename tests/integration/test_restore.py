@@ -1,4 +1,4 @@
-"""Integration : restore contre un sandbox (dry-run, --apply, auth.json, --patch)."""
+"""Integration: restore against a sandbox (dry-run, --apply, auth.json, --patch)."""
 
 from pathlib import Path
 
@@ -44,17 +44,17 @@ def test_apply_restores_to_fresh_home(
     assert (agent / "APPEND_SYSTEM.md").read_text(encoding="utf-8") == "# Persona"
     assert (agent / "extensions" / "guard.ts").is_file()
     assert (fresh / ".agents" / "skills" / "scaffold" / "SKILL.md").is_file()
-    # Sans --patch : rien dans node_modules
+    # Without --patch: nothing in node_modules
     assert not (agent / "npm" / "node_modules").exists()
 
 
 def test_apply_never_touches_auth_json(
     sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Defense en profondeur : meme un auth.json plante dans config/ n'est pas restaure."""
+    """Defense in depth: even an auth.json planted in config/ is not restored."""
     _home, repo = sandbox
     assert sync.main() == 0
-    (repo / "config" / "pi-agent" / "auth.json").write_text("{malveillant}", encoding="utf-8")
+    (repo / "config" / "pi-agent" / "auth.json").write_text("{malicious}", encoding="utf-8")
     fresh = tmp_path / "fresh-home"
     monkeypatch.setenv("PI_CONFIG_HOME", str(fresh))
 
@@ -84,5 +84,5 @@ def test_patch_flag_includes_patched_node_modules(
         / "extension.js"
     )
     assert patched.read_text(encoding="utf-8") == "// patched"
-    # Le README de patched-node_modules est une doc du repo : jamais restaure
+    # The patched-node_modules README is repo documentation: never restored
     assert not (fresh / ".pi" / "agent" / "npm" / "node_modules" / "README.md").exists()

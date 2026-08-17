@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   quality:
-    # windows-latest : plateforme cible de l'outil (chemins, robocopy-era behaviors)
+    # windows-latest: the tool's target platform (paths, robocopy-era behaviors)
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -25,9 +25,9 @@ jobs:
       - run: uv run pytest -q
 
   secrets-scan:
-    # scan d'historique git, independant de l'OS -> ubuntu (plus rapide)
-    # gitleaks invoque directement en mode `git` (historique complet) plutot que
-    # gitleaks-action, dont le calcul de plage echoue sur le push initial (racine^)
+    # git history scan, OS-independent -> ubuntu (faster)
+    # gitleaks is invoked directly in `git` mode (full history) rather than through
+    # gitleaks-action, whose range computation fails on the initial push (root^)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,7 +44,7 @@ jobs:
           cd "$GITHUB_WORKSPACE" && /tmp/gitleaks git --redact -v .
 
   pip-audit:
-    # audit de vulnerabilites sur l'environnement verrouille (uv.lock exporte puis audite)
+    # vulnerability audit of the locked environment (uv.lock exported, then audited)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -56,7 +56,7 @@ jobs:
       - run: uvx pip-audit==2.10.1 --no-deps -r /tmp/requirements.txt
 
   zizmor:
-    # audit statique des workflows GitHub Actions eux-memes; echoue sur toute trouvaille
+    # static audit of the GitHub Actions workflows themselves; fails on any finding
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

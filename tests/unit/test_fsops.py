@@ -1,4 +1,4 @@
-"""Tests unitaires de copy_tree et des exclusions (tout dans tmp_path)."""
+"""Unit tests for copy_tree and the exclusions (everything in tmp_path)."""
 
 from pathlib import Path
 
@@ -40,17 +40,17 @@ def test_copy_tree_custom_exclusions(tmp_path: Path) -> None:
     dst = tmp_path / "dst"
     count = copy_tree(src, dst, exclude_dirs=set(), exclude_files=[])
 
-    # exclusions vides = tout est copie (mode backup complet)
+    # empty exclusions = everything is copied (full backup mode)
     assert count == 3
     assert (dst / "auth.json").read_text(encoding="utf-8") == "secret"
 
 
 def test_copy_tree_preserves_content(tmp_path: Path) -> None:
     src = tmp_path / "src"
-    _touch(src / "a" / "b" / "deep.txt", "contenu profond")
+    _touch(src / "a" / "b" / "deep.txt", "deep content")
     dst = tmp_path / "dst"
     assert copy_tree(src, dst) == 1
-    assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "contenu profond"
+    assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "deep content"
 
 
 def test_is_excluded_file() -> None:

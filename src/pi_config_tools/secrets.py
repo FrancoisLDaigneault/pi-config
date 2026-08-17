@@ -1,4 +1,4 @@
-"""Detection et caviardage de secrets dans les JSON de configuration."""
+"""Detection and redaction of secrets in configuration JSON files."""
 
 import json
 import re
@@ -53,7 +53,7 @@ def _redact_list(node: list[object], path: str) -> list[str]:
 
 
 def redact(node: object, path: str = "") -> list[str]:
-    """Caviarde recursivement les valeurs suspectes. Retourne la liste des chemins caviardes."""
+    """Recursively redact suspicious values. Returns the list of redacted paths."""
     if isinstance(node, dict):
         return _redact_dict(node, path)
     if isinstance(node, list):
@@ -62,18 +62,18 @@ def redact(node: object, path: str = "") -> list[str]:
 
 
 def scan_copied_json(config: Path) -> list[str]:
-    """Audit post-copie : caviarde les secrets dans tous les *.json copies dans config/."""
+    """Post-copy audit: redact secrets in every *.json copied into config/."""
     found: list[str] = []
     for path in sorted(config.rglob("*.json")):
         rel = path.relative_to(config).as_posix()
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            print(f"  info : {rel} non analysable en JSON, laisse tel quel")
+            print(f"  info: {rel} not parseable as JSON, left as is")
             continue
         hits = redact(data)
         if hits:
             path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-            print(f"  ATTENTION {rel} : {len(hits)} valeur(s) caviardee(s) : {', '.join(hits)}")
+            print(f"  WARNING {rel}: {len(hits)} value(s) redacted: {', '.join(hits)}")
             found += [f"{rel}:{h}" for h in hits]
     return found

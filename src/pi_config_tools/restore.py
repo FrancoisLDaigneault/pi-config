@@ -1,13 +1,13 @@
-"""Restaure la configuration versionnee (config/) vers les emplacements vifs.
+"""Restores the versioned configuration (config/) to the live locations.
 
-Usage : uv run scripts/restore.py                    (simulation, rien n'est ecrit)
-        uv run scripts/restore.py --apply            (execution reelle)
-        uv run scripts/restore.py --apply --patch    (inclut le patch context-mode)
+Usage: uv run scripts/restore.py                    (simulation, nothing is written)
+       uv run scripts/restore.py --apply            (real execution)
+       uv run scripts/restore.py --apply --patch    (includes the context-mode patch)
 
-Ne touche JAMAIS auth.json.
-Le patch context-mode (patched-node_modules/) n'est restaure qu'avec --patch,
-APRES l'installation npm de Pi - sinon il creerait un node_modules partiel
-orphelin que l'installation ecraserait (voir README, restauration machine neuve).
+NEVER touches auth.json.
+The context-mode patch (patched-node_modules/) is only restored with --patch,
+AFTER Pi's npm install - otherwise it would create a partial orphan
+node_modules that the install would overwrite (see README, fresh-machine restore).
 """
 
 import argparse
@@ -19,7 +19,7 @@ from pi_config_tools.fsops import copy_file
 
 
 def _mappings() -> list[tuple[Path, Path]]:
-    """(source dans config/, destination vive)"""
+    """(source in config/, live destination)"""
     config = paths.config_dir()
     return [
         (config / "pi-agent", paths.pi_agent()),
@@ -33,7 +33,7 @@ def list_files(root: Path) -> list[Path]:
 
 
 def _skip_repo_doc(src_root: Path, src: Path, rel: Path) -> bool:
-    """Le README de patched-node_modules documente le repo, il n'est pas restaure."""
+    """The patched-node_modules README documents the repo; it is not restored."""
     is_patch_root = src_root.name == "patched-node_modules"
     return is_patch_root and src.name == "README.md" and len(rel.parts) == 1
 
@@ -43,12 +43,12 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
     for src in list_files(src_root):
         rel = src.relative_to(src_root)
         if src.name == "auth.json":
-            print(f"  IGNORE (securite) : {rel}")
+            print(f"  SKIPPED (security): {rel}")
             continue
         if _skip_repo_doc(src_root, src, rel):
             continue
         dst = dst_root / rel
-        print(f"  {'copie' if apply else 'copierait'} : {rel}  ->  {dst}")
+        print(f"  {'copying' if apply else 'would copy'}: {rel}  ->  {dst}")
         if apply:
             copy_file(src, dst)
         count += 1
@@ -56,17 +56,17 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Restaure config/ vers les emplacements vifs.")
+    parser = argparse.ArgumentParser(description="Restores config/ to the live locations.")
     parser.add_argument(
-        "--apply", action="store_true", help="executer reellement (defaut : simulation)"
+        "--apply", action="store_true", help="actually execute (default: simulation)"
     )
     parser.add_argument(
-        "--dry-run", action="store_true", help="simulation (comportement par defaut)"
+        "--dry-run", action="store_true", help="simulation (default behavior)"
     )
     parser.add_argument(
         "--patch",
         action="store_true",
-        help="inclure le patch context-mode (a lancer APRES l'installation npm)",
+        help="include the context-mode patch (run AFTER the npm install)",
     )
     return parser.parse_args(argv)
 
@@ -76,27 +76,27 @@ def main(argv: list[str] | None = None) -> int:
     apply = args.apply and not args.dry_run
 
     if not paths.config_dir().is_dir():
-        print(f"erreur : {paths.config_dir()} absent - lancer d'abord uv run scripts/sync.py")
+        print(f"error: {paths.config_dir()} missing - run uv run scripts/sync.py first")
         return 1
 
-    mode = "APPLICATION" if apply else "SIMULATION (--apply pour executer)"
-    print(f"Restauration - mode {mode}\n")
+    mode = "APPLY" if apply else "SIMULATION (--apply to execute)"
+    print(f"Restore - {mode} mode\n")
 
     count = 0
     for src_root, dst_root in _mappings():
         if src_root.name == "patched-node_modules" and not args.patch:
             print(
-                "  info : patched-node_modules/ ignore (utiliser --patch APRES "
-                "l'installation npm, voir README)"
+                "  info: patched-node_modules/ skipped (use --patch AFTER "
+                "the npm install, see README)"
             )
             continue
         if not src_root.is_dir():
-            print(f"  info : {src_root.name}/ absent du repo, ignore")
+            print(f"  info: {src_root.name}/ missing from the repo, skipped")
             continue
         count += _restore_tree(src_root, dst_root, apply)
 
-    verb = "copie(s)" if apply else "fichier(s) seraient copies"
-    print(f"\nTermine : {count} {verb}.")
+    verb = "file(s) copied" if apply else "file(s) would be copied"
+    print(f"\nDone: {count} {verb}.")
     return 0
 
 
