@@ -1,6 +1,6 @@
 [project]
 name = "pi-config-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Outils de synchronisation, restauration et sauvegarde de la configuration Pi"
 requires-python = ">=3.12"
 dependencies = []
