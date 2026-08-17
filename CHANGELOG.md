@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.0...v0.4.1) (2026-08-17)
+
+
+### Documentation
+
+* align README, CONTRIBUTING, SECURITY and NORTHSTAR with current reality ([#13](https://github.com/FrancoisLDaigneault/pi-config/issues/13)) ([b3ae58e](https://github.com/FrancoisLDaigneault/pi-config/commit/b3ae58ec09966b97130b52c78bef124448814ac2))
+
 ## [0.4.0](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.3.1...v0.4.0) (2026-08-17)
 
 
