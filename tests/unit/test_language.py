@@ -32,6 +32,7 @@ def _explicit_files() -> list[Path]:
         REPO / "CONTRIBUTING.md",
         REPO / "SECURITY.md",
         REPO / "NORTHSTAR.md",
+        REPO / "docs" / "adr" / "README.md",
         REPO / ".github" / "PULL_REQUEST_TEMPLATE.md",
         REPO / ".github" / "dependabot.yml",
     ]
@@ -41,6 +42,7 @@ def _scanned_files() -> list[Path]:
     files = _explicit_files()
     for tree in ("src", "scripts", "tests"):
         files += sorted((REPO / tree).rglob("*.py"))
+    files += sorted((REPO / "docs").rglob("*.md"))
     files += sorted((REPO / ".github" / "ISSUE_TEMPLATE").glob("*.yml"))
     files += sorted((REPO / ".github" / "workflows").glob("*.yml"))
     return files
