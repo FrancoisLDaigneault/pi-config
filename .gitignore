@@ -1,10 +1,40 @@
-# Environnement virtuel et caches Python
-.venv/
+# Python bytecode and caches
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Build and distribution artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Tool caches
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 
-# Securite : jamais de secrets ni de bases memoire dans le repo
+# Coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Security: never commit secrets or memory databases
 auth.json
 *.sqlite3*
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
+*~
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
