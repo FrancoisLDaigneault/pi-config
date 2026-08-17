@@ -65,10 +65,10 @@ commands documented here stay unchanged.
 
 These standards are **enforced automatically** at two levels:
 
-- **Pre-commit hook** (`hooks/pre-commit`, versioned): `ruff check`,
-  `ruff format --check`, strict mypy and the whole test suite (with its 90%
-  branch-coverage floor) before every commit. Enable with:
-  `git config core.hooksPath hooks`.
+- **Pre-commit hook** (`hooks/pre-commit`, versioned): `uv run ruff check .`,
+  `uv run ruff format --check .`, `uv run mypy` and `uv run pytest -q` (the
+  whole suite, with its 90% branch-coverage floor) before every commit.
+  Enable with: `git config core.hooksPath hooks`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
   `windows-latest` runs `uv sync --locked` then the same four commands as the
