@@ -36,8 +36,10 @@ EOF
 
 Applies to `refs/tags/v*`: tag deletion, update and force-update blocked; tag
 **creation stays allowed** (release-please creates the release tags with
-`GITHUB_TOKEN`); no bypass actors. Residual risk tracked: verify at the next
-release that tag creation still succeeds.
+`GITHUB_TOKEN` - since the draft flow it does so explicitly at draft-creation
+time via `force-tag-creation`, see ADR-0009); no bypass actors. Empirically
+verified at v0.4.3: creation succeeded under the ruleset and a tag-deletion
+probe was rejected (GH013).
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
@@ -53,6 +55,15 @@ EOF
 Enabled (`{"enabled": true}`): published releases and their assets can no
 longer be modified or deleted, closing the trust chain that checksums and
 provenance attestations point at.
+
+Immutability locks a release AT PUBLISH TIME. Releases are therefore created
+as drafts (`"draft": true` in the release-please config), assets are uploaded
+to the draft, and the workflow publishes it as the last step - GitHub's own
+recommended flow for immutable releases (ADR-0009). Known permanent gap:
+**v0.4.3 has no assets** - it was published (and locked) before this flow
+existed and cannot be amended or deleted; its wheel/sdist stay reproducible
+from the immutable tag (`uv build` at `v0.4.3`), and SBOM plus provenance
+attestation resumed with the next release.
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/immutable-releases -X PUT

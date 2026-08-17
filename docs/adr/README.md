@@ -15,6 +15,7 @@ themselves.
 | [0006](0006-branch-coverage-floor-on-pytest-addopts.md) | 90% branch-coverage floor riding pytest addopts | accepted |
 | [0007](0007-duplication-kept-over-abstraction.md) | Duplication kept over abstraction in the command modules | accepted |
 | [0008](0008-documentation-drift-gate.md) | Documentation drift gate | accepted |
+| [0009](0009-draft-then-publish-release-flow.md) | Draft-then-publish release flow for immutable releases | accepted |
 
 Conventions: MADR-lite, numbered, immutable once accepted (supersede with a
 new ADR instead of editing history). New significant decisions get the next
