@@ -9,7 +9,9 @@ permissions: {}
 jobs:
   release-please:
     # opens/refreshes a release PR from the Conventional Commits;
-    # release-type python updates the version in pyproject.toml and the CHANGELOG
+    # config lives in release-please-config.json (release-type python bumps
+    # pyproject.toml and the CHANGELOG; an extra-files toml updater keeps the
+    # pi-config-tools version in uv.lock in sync with the release)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -17,5 +19,3 @@ jobs:
       pull-requests: write
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        with:
-          release-type: python
