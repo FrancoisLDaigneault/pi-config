@@ -42,6 +42,18 @@ def test_redact_clean_data_untouched() -> None:
     assert json.dumps(data) == before
 
 
+def test_scan_copied_json_skips_already_redacted_files(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    raw = '{"token": "<REDACTED>", "list": ["<REDACTED>"]}'
+    (config / "done.json").write_text(raw, encoding="utf-8")
+
+    found = scan_copied_json(config)
+
+    assert found == []
+    assert (config / "done.json").read_text(encoding="utf-8") == raw
+
+
 def test_scan_copied_json_replaces_root_string_file(tmp_path: Path) -> None:
     config = tmp_path / "config"
     config.mkdir()

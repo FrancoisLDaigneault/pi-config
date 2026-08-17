@@ -167,7 +167,7 @@ def test_redaction_is_idempotent_on_documents(
     doc, _ = payload
     redact(doc)
     after_first = json.dumps(doc)
-    redact(doc)
+    assert redact(doc) == [], "second pass must report nothing (report idempotence)"
     assert json.dumps(doc) == after_first
 
 
