@@ -12,12 +12,14 @@ commands below.
 
 Pull request required for every change to `main` (0 approving reviews -
 single-maintainer repo, review happens in the orchestrated process);
-force-push and branch deletion blocked; no bypass actors. Deliberately **no
-required status checks**: release-please PRs created with `GITHUB_TOKEN`
-carry no check runs (GitHub anti-recursion), so required checks would
-deadlock every release PR (see ADR-0005). Check verification stays
-procedural: watch PR checks before merge; post-merge CI on `main` is
-authoritative.
+force-push and branch deletion blocked; **signed commits required**
+(see ADR-0010: squash-merge and release-please commits are created and
+signed by GitHub itself, so the rule costs nothing in the PR-only flow);
+no bypass actors. Deliberately **no required status checks**: release-please
+PRs created with `GITHUB_TOKEN` carry no check runs (GitHub anti-recursion),
+so required checks would deadlock every release PR (see ADR-0005). Check
+verification stays procedural: watch PR checks before merge; post-merge CI
+on `main` is authoritative.
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
@@ -27,7 +29,8 @@ gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
     "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false,
     "require_code_owner_review": false, "require_last_push_approval": false,
     "required_review_thread_resolution": false}},
-   {"type": "non_fast_forward"}, {"type": "deletion"}],
+   {"type": "non_fast_forward"}, {"type": "deletion"},
+   {"type": "required_signatures"}],
  "bypass_actors": []}
 EOF
 ```
@@ -90,6 +93,39 @@ github-actions + uv ecosystems).
 gh api repos/FrancoisLDaigneault/pi-config/vulnerability-alerts -X PUT
 gh api repos/FrancoisLDaigneault/pi-config/automated-security-fixes -X PUT
 ```
+
+## Commit signing (ADR-0010)
+
+Machine-side SSH commit signing is configured **repo-locally** in the
+pi-config clone (not globally). Every local commit signs automatically; the
+pre-commit hook runs unchanged. Key: `~/.ssh/id_ed25519_signing` (ed25519,
+fingerprint `SHA256:p+fl2vQbPN4ltYMbDYIxdqBOiHLkxZqXZTNGt0cazHo`).
+
+```bash
+git config gpg.format ssh
+git config user.signingkey ~/.ssh/id_ed25519_signing.pub
+git config commit.gpgsign true
+git config user.name "francois"
+git config user.email "francois.ldaigneault@gmail.com"
+git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+```
+
+Commits on `main` are all GitHub-web-flow signed (squash merges and
+release-please commits are created by GitHub); the 23 pre-ruleset direct
+pushes predate signing and stay unverified - historical, not gated.
+
+**Pending owner action** (needs interactive auth; until done, locally signed
+branch commits show as Unverified on GitHub - local verification already
+reports a good signature, and `main` is unaffected). Either:
+
+```bash
+gh auth refresh -h github.com -s admin:ssh_signing_key
+gh ssh-key add ~/.ssh/id_ed25519_signing.pub --type signing \
+  --title "pi-config commit signing"
+```
+
+or paste the content of `~/.ssh/id_ed25519_signing.pub` at
+<https://github.com/settings/ssh/new> with key type **Signing Key**.
 
 ## Secret scanning and push protection
 
