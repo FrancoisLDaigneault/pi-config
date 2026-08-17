@@ -50,6 +50,20 @@ def test_sync_redacts_secrets(sandbox: tuple[Path, Path]) -> None:
     assert settings["packages"] == ["pi-lens"]
 
 
+def test_sync_redacts_root_string_file(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    home, repo = sandbox
+    (home / ".pi" / "agent" / "claude-bridge.json").write_text(
+        json.dumps("sk-live-abc123"), encoding="utf-8"
+    )
+    assert main() == 0
+    copied = repo / "config" / "pi-agent" / "claude-bridge.json"
+    assert copied.read_text(encoding="utf-8") == '"<REDACTED>"\n'
+    # Reported once by sync_json_with_audit; the post-copy scan must not re-report it.
+    assert capsys.readouterr().out.count("<root>") == 1
+
+
 def test_sync_rebuilds_config_from_scratch(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     stale = repo / "config" / "obsolete.txt"

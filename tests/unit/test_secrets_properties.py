@@ -16,7 +16,6 @@ import copy
 import json
 from collections.abc import Callable
 
-import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -168,7 +167,7 @@ def test_redaction_is_idempotent_on_documents(
     doc, _ = payload
     redact(doc)
     after_first = json.dumps(doc)
-    redact(doc)
+    assert redact(doc) == [], "second pass must report nothing (report idempotence)"
     assert json.dumps(doc) == after_first
 
 
@@ -190,16 +189,7 @@ def test_redact_is_total_on_any_json_document(doc: object) -> None:
     json.dumps(doc)  # and must leave the document JSON-serializable
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Known gap found by this property: redact() inspects only dict/list "
-        "containers, so a JSON document whose top level is a bare secret "
-        "string (a file containing just '\"sk-...\"') is never reported and "
-        "scan_copied_json leaves it intact. Kept failing on purpose; the fix "
-        "is a separate decision."
-    ),
-    strict=True,
-)
 @given(prefix=st.sampled_from(_PATTERN_PREFIXES), suffix=st.text(max_size=20))
 def test_top_level_secret_string_is_reported(prefix: str, suffix: str) -> None:
+    """A bare secret string at the document root is reported (gap fixed)."""
     assert redact(prefix + suffix), "top-level secret string was not reported"

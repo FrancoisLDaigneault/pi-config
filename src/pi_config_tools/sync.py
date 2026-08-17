@@ -9,7 +9,7 @@ import sys
 
 from pi_config_tools import paths
 from pi_config_tools.fsops import context_mode_version, copy_file, copy_tree
-from pi_config_tools.secrets import redact, scan_copied_json
+from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
 # Items of .pi/agent to version (folders and files, relative paths)
 AGENT_DIRS = ["extensions", "prompts", "skills", "packages", "agents"]
@@ -39,6 +39,8 @@ def sync_json_with_audit(rel: str) -> list[str] | None:
     found = redact(data)
     dst.parent.mkdir(parents=True, exist_ok=True)
     if found:
+        if isinstance(data, str):
+            data = REDACTED
         dst.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"  WARNING {rel}: {len(found)} value(s) redacted: {', '.join(found)}")
     else:
