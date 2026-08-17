@@ -17,10 +17,11 @@ required status checks**: release-please PRs created with `GITHUB_TOKEN`
 carry no check runs (GitHub anti-recursion), so required checks would
 deadlock every release PR (see ADR-0005). Check verification stays
 procedural: watch PR checks before merge; post-merge CI on `main` is
-authoritative. A `required_signatures` rule is **deliberately deferred**
-until the signing key is registered - it gates every PR branch commit, so
-enabling it early blocks all worker PRs (empirically proven, see ADR-0010
-and the commit-signing section below).
+authoritative. A `required_signatures` rule is **active** (since
+2026-08-18): the signing key is registered on GitHub, so every PR branch
+commit must carry a verified signature. Enabling it before key registration
+blocks all worker PRs (empirically proven, see ADR-0010 and the
+commit-signing section below).
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
@@ -114,10 +115,11 @@ Commits on `main` are all GitHub-web-flow signed (squash merges and
 release-please commits are created by GitHub); the 23 pre-ruleset direct
 pushes predate signing and stay unverified - historical, not gated.
 
-**Pending owner sequence** (step 1 needs interactive auth, which automation
-cannot perform; until done, locally signed branch commits show as Unverified
-on GitHub - local verification already reports a good signature, and `main`
-is unaffected).
+**Owner sequence — completed 2026-08-18.** The key is registered as a
+Signing Key, previously pushed signed commits flipped retroactively to
+`verified: true / valid`, and the `required_signatures` rule is re-enabled
+on ruleset 20945568 (all four rules active). The steps below are kept for a
+machine rebuild or key rotation.
 
 Step 1 - register the signing key. Either:
 
