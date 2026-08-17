@@ -9,6 +9,7 @@
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/FrancoisLDaigneault/pi-config/badge)](https://scorecard.dev/viewer/?uri=github.com/FrancoisLDaigneault/pi-config)
 
 Official repository for the Pi configuration (Maestro persona, extensions, prompts, skills, settings). Goal: never lose the configuration, even after a Pi update or a machine reinstall.
 
