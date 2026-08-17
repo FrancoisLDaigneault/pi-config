@@ -15,6 +15,13 @@ uv sync                            # creates .venv/, installs the pi_config_tool
 git config core.hooksPath hooks   # enables the versioned pre-commit hook (redo after every clone)
 ```
 
+### Task runner (optional)
+
+With [just](https://just.systems) installed (`winget install Casey.Just`), the
+`justfile` wraps the common commands -- every one of them works standalone too:
+`just setup` (onboarding), `just check` (the three gates), `just sync`,
+`just restore [--apply]`, `just backup`. Run `just --list` for the summary.
+
 ## Code structure
 
 ```
