@@ -26,6 +26,24 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest -q
+        # machine-readable reports for the artifact upload; addopts still
+        # enforces the coverage floor
+        env:
+          PYTEST_ADDOPTS: --cov-report=xml --junit-xml=test-results.xml
+      - name: Publish coverage summary
+        shell: bash
+        run: |
+          total=$(uv run coverage report --format=total --precision=2)
+          echo "Branch coverage: ${total}% (enforced floor: 90%)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage and test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: test-reports
+          path: |
+            coverage.xml
+            test-results.xml
+          retention-days: 30
 
   secrets-scan:
     # git history scan, OS-independent -> ubuntu (faster)

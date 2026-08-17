@@ -22,6 +22,7 @@ dist/
 .coverage.*
 htmlcov/
 coverage.xml
+test-results.xml
 
 # Security: never commit secrets or memory databases
 auth.json
