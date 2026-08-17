@@ -34,7 +34,8 @@ jobs:
         shell: bash
         run: |
           total=$(uv run coverage report --format=total --precision=2)
-          echo "Branch coverage: ${total}% (enforced floor: 90%)" >> "$GITHUB_STEP_SUMMARY"
+          floor=$(sed -n 's/.*--cov-fail-under=\([0-9][0-9]*\).*/\1/p' pyproject.toml)
+          echo "Branch coverage: ${total}% (enforced floor: ${floor}%)" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage and test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

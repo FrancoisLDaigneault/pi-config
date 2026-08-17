@@ -22,6 +22,8 @@ dev = [
 
 [tool.ruff]
 line-length = 100
+# config/ is a live-machine snapshot, never hand-edited: keep every gate off it
+extend-exclude = ["config"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "PL", "C90"]
