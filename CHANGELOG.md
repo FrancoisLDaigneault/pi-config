@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.3...v0.4.4) (2026-08-17)
+
+
+### Bug Fixes
+
+* report and redact top-level secret strings ([#21](https://github.com/FrancoisLDaigneault/pi-config/issues/21)) ([b9e8547](https://github.com/FrancoisLDaigneault/pi-config/commit/b9e85470833159111721398b00c36f7c06b8fd2c))
+
 ## [0.4.3](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.2...v0.4.3) (2026-08-17)
 
 
