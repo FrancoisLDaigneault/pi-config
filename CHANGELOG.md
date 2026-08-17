@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.2...v0.4.3) (2026-08-17)
+
+
+### Documentation
+
+* add ADRs, governance files, settings inventory and Scorecard ([#17](https://github.com/FrancoisLDaigneault/pi-config/issues/17)) ([277e5df](https://github.com/FrancoisLDaigneault/pi-config/commit/277e5dff968debfc39c75fa0fe96a5a0c32c183e))
+
 ## [0.4.2](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.1...v0.4.2) (2026-08-17)
 
 
