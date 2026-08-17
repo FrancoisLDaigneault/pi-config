@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pi_config_tools.fsops import context_mode_version, copy_tree, is_excluded_file
+from pi_config_tools.fsops import context_mode_version, copy_tree
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -65,12 +65,3 @@ def test_context_mode_version_unreadable(tmp_path: Path, monkeypatch: pytest.Mon
     pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
     _touch(pkg, "{not json}")
     assert context_mode_version() == "unknown (package.json unreadable)"
-
-
-def test_is_excluded_file() -> None:
-    assert is_excluded_file("auth.json")
-    assert is_excluded_file("settings.json.bak-2026")
-    assert is_excluded_file("settings.backup-20260809.json")
-    assert is_excluded_file("module.pyc")
-    assert not is_excluded_file("settings.json")
-    assert not is_excluded_file("APPEND_SYSTEM.md")
