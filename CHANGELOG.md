@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.1...v0.4.2) (2026-08-17)
+
+
+### Documentation
+
+* add agent guide, doc-drift gate and CI coverage reports ([#15](https://github.com/FrancoisLDaigneault/pi-config/issues/15)) ([3297ead](https://github.com/FrancoisLDaigneault/pi-config/commit/3297ead6eaf1a5d6d87f52100e6410065d05a639))
+
 ## [0.4.1](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.0...v0.4.1) (2026-08-17)
 
 
