@@ -28,6 +28,7 @@ def _explicit_files() -> list[Path]:
         REPO / ".gitattributes",
         REPO / ".gitignore",
         REPO / "AGENTS.md",
+        REPO / "GOVERNANCE.md",
         REPO / "README.md",
         REPO / "CONTRIBUTING.md",
         REPO / "SECURITY.md",
