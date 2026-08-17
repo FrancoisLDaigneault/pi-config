@@ -1,16 +1,16 @@
-# Contribuer
+# Contributing
 
-## Mise en place
+## Setup
 
 ```bash
-uv sync                           # crée .venv/ et installe le package + outils dev
-git config core.hooksPath hooks   # active le hook pre-commit versionné
+uv sync                           # creates .venv/ and installs the package + dev tools
+git config core.hooksPath hooks   # enables the versioned pre-commit hook
 ```
 
-## Portes de qualité
+## Quality gates
 
-Avant toute PR, les trois commandes doivent passer sans erreur (le hook
-pre-commit et la CI les exécutent aussi) :
+Before any PR, the three commands must pass without errors (the pre-commit
+hook and the CI run them too):
 
 ```bash
 uv run ruff check .
@@ -18,16 +18,17 @@ uv run mypy
 uv run pytest -q
 ```
 
-## Standards appliqués par l'outillage
+## Standards enforced by tooling
 
-- Complexité cyclomatique (McCabe) ≤ 8
-- ≤ 30 instructions par fonction, ≤ 5 arguments
-- Lignes ≤ 100 caractères
-- Typage statique strict (`mypy --strict` via `[tool.mypy]` dans pyproject.toml)
-- ≤ 200 lignes par module, ≤ 20 par script — vérifié par `tests/unit/test_standards.py`
+- Cyclomatic complexity (McCabe) <= 8
+- <= 30 statements per function, <= 5 arguments
+- Lines <= 100 characters
+- Strict static typing (`mypy --strict` via `[tool.mypy]` in pyproject.toml)
+- <= 200 lines per module, <= 20 per script - checked by `tests/unit/test_standards.py`
+- English only in code, comments and docs - checked by `tests/unit/test_language.py`
 
-## Messages de commit
+## Commit messages
 
-Les [Conventional Commits](https://www.conventionalcommits.org/fr/v1.0.0/)
-sont obligatoires (`feat:`, `fix:`, `ci:`, `docs:`, `chore:`…) :
-release-please s'en sert pour générer les versions et le CHANGELOG.
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+are mandatory (`feat:`, `fix:`, `ci:`, `docs:`, `chore:`...):
+release-please uses them to generate versions and the CHANGELOG.

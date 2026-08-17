@@ -1,6 +1,6 @@
 #!/bin/sh
-# Gate pre-commit : ruff + mypy + suite complete. Active par : git config core.hooksPath hooks
-# Doit rester rapide (< 10 s) ; la suite entiere tourne en ~0.6 s, tres sous le budget.
+# Pre-commit gate: ruff + mypy + full suite. Enabled via: git config core.hooksPath hooks
+# Must stay fast (< 10 s); the whole suite runs in ~0.6 s, well under budget.
 set -e
 cd "$(git rev-parse --show-toplevel)"
 

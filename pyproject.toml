@@ -1,7 +1,7 @@
 [project]
 name = "pi-config-tools"
 version = "0.2.0"
-description = "Outils de synchronisation, restauration et sauvegarde de la configuration Pi"
+description = "Sync, restore and backup tools for the Pi configuration"
 requires-python = ">=3.12"
 dependencies = []
 
@@ -33,7 +33,7 @@ max-statements = 30
 max-args = 5
 
 [tool.ruff.lint.per-file-ignores]
-# Les tests comparent des comptes et contenus litteraux : PLR2004 y est du bruit.
+# Tests compare literal counts and contents: PLR2004 is noise there.
 "tests/*" = ["PLR2004"]
 
 [tool.pytest.ini_options]

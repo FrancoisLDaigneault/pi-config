@@ -1,4 +1,4 @@
-"""Wrapper fin - logique dans src/pi_config_tools/sync.py."""
+"""Thin wrapper - logic lives in src/pi_config_tools/sync.py."""
 
 import sys
 

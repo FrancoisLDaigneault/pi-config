@@ -1,4 +1,4 @@
-# Mises a jour automatiques des dependances (actions GitHub et lockfile uv).
+# Automatic dependency updates (GitHub actions and the uv lockfile).
 version: 2
 updates:
   - package-ecosystem: github-actions

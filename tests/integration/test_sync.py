@@ -1,4 +1,4 @@
-"""Integration : sync contre une fausse arborescence (jamais la vraie config)."""
+"""Integration: sync against a fake tree (never the real config)."""
 
 import json
 import shutil
@@ -14,7 +14,7 @@ def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     assert main() == 0
     config = repo / "config"
 
-    # Copies attendues
+    # Expected copies
     assert (config / "pi-agent" / "APPEND_SYSTEM.md").is_file()
     assert (config / "pi-agent" / "extensions" / "guard.ts").is_file()
     assert (config / "pi-agent" / "prompts" / "contract.md").is_file()
@@ -24,7 +24,7 @@ def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     assert (config / "pi-agent" / "npm" / "package-lock.json").is_file()
     assert (config / "agents-skills" / "scaffold" / "SKILL.md").is_file()
 
-    # Patch context-mode + README genere avec la version
+    # context-mode patch + generated README with the version
     patched = config / "patched-node_modules"
     assert (patched / "context-mode" / "build" / "adapters" / "pi" / "extension.js").is_file()
     assert "9.9.9" in (patched / "README.md").read_text(encoding="utf-8")
@@ -54,7 +54,7 @@ def test_sync_rebuilds_config_from_scratch(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     stale = repo / "config" / "obsolete.txt"
     stale.parent.mkdir(parents=True)
-    stale.write_text("vieux", encoding="utf-8")
+    stale.write_text("old", encoding="utf-8")
     assert main() == 0
     assert not stale.exists()
 
@@ -63,9 +63,9 @@ def test_sync_invalid_live_json_exits_1(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
     home, _repo = sandbox
-    (home / ".pi" / "agent" / "settings.json").write_text("{pas du json", encoding="utf-8")
+    (home / ".pi" / "agent" / "settings.json").write_text("{not json", encoding="utf-8")
     assert main() == 1
-    assert "sync interrompu" in capsys.readouterr().out
+    assert "sync aborted" in capsys.readouterr().out
 
 
 def test_sync_rmtree_failure_exits_1(
@@ -77,10 +77,10 @@ def test_sync_rmtree_failure_exits_1(
     (repo / "config").mkdir()
 
     def boom(path: Path) -> None:
-        raise OSError("acces refuse")
+        raise OSError("access denied")
 
-    # sync.shutil est le module shutil global : le patcher directement est equivalent
-    # (mypy strict interdit l'acces au re-export implicite sync.shutil)
+    # sync.shutil is the global shutil module: patching it directly is equivalent
+    # (mypy strict forbids access to the implicit re-export sync.shutil)
     monkeypatch.setattr(shutil, "rmtree", boom)
     assert main() == 1
-    assert "impossible de nettoyer" in capsys.readouterr().out
+    assert "cannot clean" in capsys.readouterr().out

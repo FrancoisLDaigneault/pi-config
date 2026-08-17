@@ -1,6 +1,6 @@
-"""Synchronise la configuration Pi vive vers le dossier config/ du repo.
+"""Syncs the live Pi configuration to the repo's config/ folder.
 
-Usage : uv run scripts/sync.py
+Usage: uv run scripts/sync.py
 """
 
 import json
@@ -11,7 +11,7 @@ from pi_config_tools import paths
 from pi_config_tools.fsops import context_mode_version, copy_file, copy_tree
 from pi_config_tools.secrets import redact, scan_copied_json
 
-# Elements de .pi/agent a versionner (dossiers et fichiers, chemins relatifs)
+# Items of .pi/agent to version (folders and files, relative paths)
 AGENT_DIRS = ["extensions", "prompts", "skills", "packages", "agents"]
 AGENT_FILES = [
     "APPEND_SYSTEM.md",
@@ -25,22 +25,22 @@ AGENT_FILES = [
 
 
 def sync_json_with_audit(rel: str) -> list[str] | None:
-    """Copie un JSON de .pi/agent vers config/pi-agent en caviardant les secrets eventuels.
+    """Copy a JSON file from .pi/agent to config/pi-agent, redacting any secrets.
 
-    Retourne None si le fichier est illisible ou n'est pas du JSON valide.
+    Returns None if the file is unreadable or not valid JSON.
     """
     src = paths.pi_agent() / rel
     dst = paths.config_dir() / "pi-agent" / rel
     try:
         data = json.loads(src.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"  erreur : {rel} illisible ou JSON invalide ({exc}) - sync interrompu")
+        print(f"  error: {rel} unreadable or invalid JSON ({exc}) - sync aborted")
         return None
     found = redact(data)
     dst.parent.mkdir(parents=True, exist_ok=True)
     if found:
         dst.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        print(f"  ATTENTION {rel} : {len(found)} valeur(s) caviardee(s) : {', '.join(found)}")
+        print(f"  WARNING {rel}: {len(found)} value(s) redacted: {', '.join(found)}")
     else:
         shutil.copy2(src, dst)
     return found
@@ -51,22 +51,22 @@ def _sync_agent_dirs() -> int:
     for rel in AGENT_DIRS:
         src = paths.pi_agent() / rel
         if not src.is_dir() or not any(src.iterdir()):
-            print(f"  info : {rel}/ absent ou vide, ignore")
+            print(f"  info: {rel}/ missing or empty, skipped")
             continue
         n = copy_tree(src, paths.config_dir() / "pi-agent" / rel)
         total += n
-        print(f"  pi-agent/{rel}/ : {n} fichier(s)")
+        print(f"  pi-agent/{rel}/ : {n} file(s)")
     return total
 
 
 def _sync_agent_files() -> tuple[int, list[str]] | None:
-    """Retourne None si un JSON de config est invalide (erreur propagee a main)."""
+    """Returns None if a config JSON is invalid (error propagated to main)."""
     total = 0
     redacted: list[str] = []
     for rel in AGENT_FILES:
         src = paths.pi_agent() / rel
         if not src.is_file():
-            print(f"  attention : {rel} absent, ignore")
+            print(f"  warning: {rel} missing, skipped")
             continue
         if rel.endswith(".json"):
             found = sync_json_with_audit(rel)
@@ -81,20 +81,20 @@ def _sync_agent_files() -> tuple[int, list[str]] | None:
 
 
 def _sync_patch() -> int:
-    """Fichier patche dans node_modules (ecrase par tout npm update)."""
+    """Patched file in node_modules (overwritten by any npm update)."""
     patched_src = paths.patched_live()
     if not patched_src.is_file():
-        print("  attention : patch context-mode absent, ignore")
+        print("  warning: context-mode patch missing, skipped")
         return 0
     dest_root = paths.config_dir() / "patched-node_modules"
     copy_file(patched_src, dest_root / paths.PATCHED_REL)
     version = context_mode_version()
     (dest_root / "README.md").write_text(
-        "# Fichiers patches dans node_modules\n\n"
-        f"- `{paths.PATCHED_REL.as_posix()}` — patch local applique a context-mode "
-        f"(version au moment du sync : {version}).\n\n"
-        "Tout `npm update` de context-mode ecrase ce fichier : le recopier depuis ici "
-        "apres chaque update (ou via `uv run scripts/restore.py --apply`).\n",
+        "# Patched files in node_modules\n\n"
+        f"- `{paths.PATCHED_REL.as_posix()}` - local patch applied to context-mode "
+        f"(version at sync time: {version}).\n\n"
+        "Any `npm update` of context-mode overwrites this file: copy it back from "
+        "here after each update (or via `uv run scripts/restore.py --apply`).\n",
         encoding="utf-8",
     )
     print(f"  patched-node_modules : extension.js + README (context-mode {version})")
@@ -103,21 +103,21 @@ def _sync_patch() -> int:
 
 def _sync_skills() -> int:
     if not paths.agents_skills().is_dir():
-        print("  attention : .agents/skills absent, ignore")
+        print("  warning: .agents/skills missing, skipped")
         return 0
     n = copy_tree(paths.agents_skills(), paths.config_dir() / "agents-skills")
-    print(f"  agents-skills/ : {n} fichier(s)")
+    print(f"  agents-skills/ : {n} file(s)")
     return n
 
 
-def main(argv: list[str] | None = None) -> int:  # argv pour symetrie restore/backup (sans option)
+def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup symmetry
     del argv
     config = paths.config_dir()
     if config.exists():
         try:
             shutil.rmtree(config)
         except OSError as exc:
-            print(f"  erreur : impossible de nettoyer {config} ({exc})")
+            print(f"  error: cannot clean {config} ({exc})")
             return 1
 
     total = _sync_agent_dirs()
@@ -130,10 +130,10 @@ def main(argv: list[str] | None = None) -> int:  # argv pour symetrie restore/ba
     total += _sync_skills()
     redacted += scan_copied_json(config)
 
-    print(f"\nSync termine : {total} fichier(s) dans {config}")
+    print(f"\nSync done: {total} file(s) in {config}")
     if redacted:
         print(
-            f"ATTENTION : {len(redacted)} secret(s) caviarde(s) - voir README pour la restauration."
+            f"WARNING: {len(redacted)} secret(s) redacted - see README for restore instructions."
         )
     return 0
 

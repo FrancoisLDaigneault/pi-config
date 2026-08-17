@@ -1,4 +1,4 @@
-"""Tests unitaires de la destination par defaut du backup (horodatage a la seconde)."""
+"""Unit tests for the backup default destination (second-resolution timestamp)."""
 
 from datetime import datetime
 from pathlib import Path
@@ -18,7 +18,7 @@ def test_default_destination_format(monkeypatch: pytest.MonkeyPatch, tmp_path: P
 def test_default_destination_second_resolution(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Deux backups dans la meme minute ne doivent pas partager le meme dossier."""
+    """Two backups within the same minute must not share the same folder."""
     monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
     a = default_destination(datetime(2026, 8, 16, 14, 30, 1))
     b = default_destination(datetime(2026, 8, 16, 14, 30, 2))

@@ -1,4 +1,4 @@
-"""E2E : cycle complet via les vrais points d'entree scripts/ (subprocess)."""
+"""E2E: full cycle through the real scripts/ entry points (subprocess)."""
 
 import os
 import subprocess
@@ -34,37 +34,37 @@ def files_under(root: Path) -> dict[str, str]:
 def test_sync_then_restore_on_fresh_machine(
     tmp_path: Path, make_fake_home: Callable[[Path], Path]
 ) -> None:
-    """Fausse config vive -> repo -> nouvelle machine vide -> fichiers identiques."""
-    source_home = make_fake_home(tmp_path / "machine-source")
+    """Fake live config -> repo -> fresh empty machine -> identical files."""
+    source_home = make_fake_home(tmp_path / "source-machine")
     repo = tmp_path / "repo"
     repo.mkdir()
 
     result = run_script("sync.py", [], source_home, repo)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "Sync termine" in result.stdout
+    assert "Sync done" in result.stdout
 
-    fresh_home = tmp_path / "machine-neuve"
+    fresh_home = tmp_path / "fresh-machine"
     result = run_script("restore.py", ["--apply", "--patch"], fresh_home, repo)
     assert result.returncode == 0, result.stdout + result.stderr
 
-    # Chaque fichier restaure doit etre identique a la machine source,
-    # sauf settings.json dont le secret est legitimement caviarde par sync
+    # Each restored file must be identical to the source machine,
+    # except settings.json whose secret is legitimately redacted by sync
     restored = files_under(fresh_home)
     source = files_under(source_home)
-    assert restored, "aucun fichier restaure"
+    assert restored, "no file restored"
     for rel, content in restored.items():
-        assert rel in source, f"fichier inattendu restaure : {rel}"
+        assert rel in source, f"unexpected restored file: {rel}"
         if rel == ".pi/agent/settings.json":
             assert "<REDACTED>" in content
             assert "sk-secret" not in content
         else:
-            assert content == source[rel], f"contenu different : {rel}"
+            assert content == source[rel], f"different content: {rel}"
 
-    # Les exclusions de securite ne traversent jamais le cycle
+    # Security exclusions never cross the cycle
     assert ".pi/agent/auth.json" not in restored
     assert not any("sessions" in rel for rel in restored)
     assert not any(rel.endswith(".pyc") for rel in restored)
-    # Le patch traverse avec --patch
+    # The patch crosses with --patch
     assert ".pi/agent/npm/node_modules/context-mode/build/adapters/pi/extension.js" in restored
 
 
@@ -77,10 +77,10 @@ def test_backup_full_sandbox(tmp_path: Path, make_fake_home: Callable[[Path], Pa
     result = run_script("backup.py", ["--destination", str(dest)], home, repo)
     assert result.returncode == 0, result.stdout + result.stderr
 
-    for line in ["pi-agent", "patch context-mode", "mempalace", "agents-skills", "TOTAL"]:
+    for line in ["pi-agent", "context-mode patch", "mempalace", "agents-skills", "TOTAL"]:
         assert line in result.stdout
-    assert "ATTENTION MemPalace" in result.stdout
-    # Le backup local complet inclut auth.json (contrairement au repo)
+    assert "WARNING MemPalace" in result.stdout
+    # The full local backup includes auth.json (unlike the repo)
     assert (dest / "pi-agent" / "auth.json").is_file()
     assert (dest / "mempalace" / "knowledge_graph.sqlite3").is_file()
     assert (dest / "patched-node_modules" / "context-mode-version.txt").is_file()

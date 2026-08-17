@@ -1,35 +1,37 @@
-# NORTHSTAR — pi-config
+# NORTHSTAR - pi-config
 
-KPIs de pilotage de ce depot (outil personnel de sauvegarde/restauration de la config Pi).
-Un KPI par axe, mesurable, avec valeur actuelle reelle. Mis a jour quand une mesure change de categorie.
+Steering KPIs for this repository (personal backup/restore tool for the Pi configuration).
+One KPI per axis, measurable, with a real current value. Updated whenever a measurement changes category.
 
-## Rapidite
+## Speed
 
-| KPI | Actuel | Cible | Mesure |
+| KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Restauration machine neuve | procedure 8 etapes documentee | < 30 min chrono | Suivre `README.md` § Restauration sur machine neuve |
-| Duree de la suite de tests | 0.63 s (28 tests) | < 5 s | `uv run pytest -q` (gate CI) |
+| Fresh-machine restore | 8-step documented procedure | < 30 min wall clock | Follow `README.md` "Restoring on a fresh machine" |
+| Test suite duration | 0.8 s (29 tests) | < 5 s | `uv run pytest -q` (CI gate) |
 
-## Securite
+## Security
 
-| KPI | Actuel | Cible | Mesure |
+| KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Secrets dans le repo | 0 (historique audite) | 0, toujours | Audit `sync.py` a chaque sync + job gitleaks en CI |
-| `auth.json` suivi par git | jamais | jamais | Exclusion `sync.py` + `.gitignore` + test e2e |
+| Secrets in the repo | 0 (history audited) | 0, always | `sync.py` audit at each sync + gitleaks job in CI |
+| `auth.json` tracked by git | never | never | `sync.py` exclusion + `.gitignore` + e2e test |
 
-## Maintenabilite
+## Maintainability
 
-| KPI | Actuel | Cible | Mesure |
+| KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Violations ruff (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (hook pre-commit + CI) |
-| Taille des modules src / scripts | max 142 / 8 lignes | <= 200 / <= 20 | `tests/unit/test_standards.py` (la limite est un test) |
-| Tests verts | 28 (14 unit / 12 integration / 2 e2e) | 100 % verts, 3 niveaux | `uv run pytest` (hook + CI) |
+| Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit hook + CI) |
+| src module / script size | max 142 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
+| Green tests | 29 (15 unit / 12 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (hook + CI) |
 
-## Durabilite (scalabilite pour cet outil)
+## Scalability
 
-| KPI | Actuel | Cible | Mesure |
+(For this tool, scalability means the sync/restore workflow keeps holding as the config grows.)
+
+| KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Parite sync -> restore machine neuve | prouvee (e2e, fichiers identiques) | reste prouvee a chaque commit | `tests/e2e/test_full_cycle.py` en CI |
-| Fraicheur du snapshot `config/` | sync du 2026-08-16 | sync avant chaque update de Pi | Workflow `sync -> commit -> push` du README |
+| sync -> restore fresh-machine parity | proven (e2e, identical files) | stays proven at every commit | `tests/e2e/test_full_cycle.py` in CI |
+| `config/` snapshot freshness | synced on 2026-08-16 | sync before every Pi update | README `sync -> commit -> push` workflow |
 
-Un KPI toujours vert sans effort est a resserrer ; un KPI toujours rouge est a corriger ou a retirer.
+A KPI that is always green effortlessly should be tightened; a KPI that is always red should be fixed or dropped.

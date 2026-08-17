@@ -1,8 +1,10 @@
-"""Tests unitaires de copy_tree et des exclusions (tout dans tmp_path)."""
+"""Unit tests for copy_tree and the exclusions (everything in tmp_path)."""
 
 from pathlib import Path
 
-from pi_config_tools.fsops import copy_tree, is_excluded_file
+import pytest
+
+from pi_config_tools.fsops import context_mode_version, copy_tree, is_excluded_file
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -40,17 +42,31 @@ def test_copy_tree_custom_exclusions(tmp_path: Path) -> None:
     dst = tmp_path / "dst"
     count = copy_tree(src, dst, exclude_dirs=set(), exclude_files=[])
 
-    # exclusions vides = tout est copie (mode backup complet)
+    # empty exclusions = everything is copied (full backup mode)
     assert count == 3
     assert (dst / "auth.json").read_text(encoding="utf-8") == "secret"
 
 
 def test_copy_tree_preserves_content(tmp_path: Path) -> None:
     src = tmp_path / "src"
-    _touch(src / "a" / "b" / "deep.txt", "contenu profond")
+    _touch(src / "a" / "b" / "deep.txt", "deep content")
     dst = tmp_path / "dst"
     assert copy_tree(src, dst) == 1
-    assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "contenu profond"
+    assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "deep content"
+
+
+def test_context_mode_version_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    assert context_mode_version() == "unknown (package.json missing)"
+
+
+def test_context_mode_version_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
+    _touch(pkg, "{not json}")
+    assert context_mode_version() == "unknown (package.json unreadable)"
 
 
 def test_is_excluded_file() -> None:

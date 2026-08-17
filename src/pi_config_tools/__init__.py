@@ -1,1 +1,1 @@
-"""Outils de synchronisation, restauration et sauvegarde de la configuration Pi."""
+"""Sync, restore and backup tools for the Pi configuration."""

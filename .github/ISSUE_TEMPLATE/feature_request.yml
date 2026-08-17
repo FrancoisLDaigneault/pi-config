@@ -1,16 +1,16 @@
-name: Demande de fonctionnalité
-description: Proposer une amélioration
+name: Feature request
+description: Suggest an improvement
 labels: [enhancement]
 body:
   - type: textarea
-    id: probleme
+    id: problem
     attributes:
-      label: Problème à résoudre
-      description: Le besoin réel, pas la solution.
+      label: Problem to solve
+      description: The actual need, not the solution.
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Solution envisagée
-      description: Optionnel — une piste si vous en avez une.
+      label: Proposed solution
+      description: Optional - a direction if you have one.
