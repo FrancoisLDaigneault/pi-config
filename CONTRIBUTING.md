@@ -7,6 +7,9 @@ uv sync                           # creates .venv/ and installs the package + de
 git config core.hooksPath hooks   # enables the versioned pre-commit hook
 ```
 
+With [just](https://just.systems) installed, `just setup` runs both commands in
+one step (optional -- the commands above remain the baseline).
+
 ## Quality gates
 
 Before any PR, the three commands must pass without errors (the pre-commit
