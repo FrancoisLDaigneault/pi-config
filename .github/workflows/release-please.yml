@@ -9,9 +9,10 @@ permissions: {}
 jobs:
   release-please:
     # opens/refreshes a release PR from the Conventional Commits;
-    # config lives in release-please-config.json (release-type python bumps
+    # config lives in .github/release-please/ (release-type python bumps
     # pyproject.toml and the CHANGELOG; an extra-files toml updater keeps the
-    # pi-config-tools version in uv.lock in sync with the release)
+    # pi-config-tools version in uv.lock in sync with the release -- extra-files
+    # paths stay relative to the package path ".", i.e. the repo root)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -23,6 +24,9 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
+        with:
+          config-file: .github/release-please/release-please-config.json
+          manifest-file: .github/release-please/.release-please-manifest.json
 
   release-assets:
     # when a release was just created: build wheel+sdist, export the SPDX SBOM
