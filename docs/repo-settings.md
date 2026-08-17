@@ -12,14 +12,15 @@ commands below.
 
 Pull request required for every change to `main` (0 approving reviews -
 single-maintainer repo, review happens in the orchestrated process);
-force-push and branch deletion blocked; **signed commits required**
-(see ADR-0010: squash-merge and release-please commits are created and
-signed by GitHub itself, so the rule costs nothing in the PR-only flow);
-no bypass actors. Deliberately **no required status checks**: release-please
-PRs created with `GITHUB_TOKEN` carry no check runs (GitHub anti-recursion),
-so required checks would deadlock every release PR (see ADR-0005). Check
-verification stays procedural: watch PR checks before merge; post-merge CI
-on `main` is authoritative.
+force-push and branch deletion blocked; no bypass actors. Deliberately **no
+required status checks**: release-please PRs created with `GITHUB_TOKEN`
+carry no check runs (GitHub anti-recursion), so required checks would
+deadlock every release PR (see ADR-0005). Check verification stays
+procedural: watch PR checks before merge; post-merge CI on `main` is
+authoritative. A `required_signatures` rule is **deliberately deferred**
+until the signing key is registered - it gates every PR branch commit, so
+enabling it early blocks all worker PRs (empirically proven, see ADR-0010
+and the commit-signing section below).
 
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
@@ -29,8 +30,7 @@ gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
     "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false,
     "require_code_owner_review": false, "require_last_push_approval": false,
     "required_review_thread_resolution": false}},
-   {"type": "non_fast_forward"}, {"type": "deletion"},
-   {"type": "required_signatures"}],
+   {"type": "non_fast_forward"}, {"type": "deletion"}],
  "bypass_actors": []}
 EOF
 ```
@@ -114,9 +114,12 @@ Commits on `main` are all GitHub-web-flow signed (squash merges and
 release-please commits are created by GitHub); the 23 pre-ruleset direct
 pushes predate signing and stay unverified - historical, not gated.
 
-**Pending owner action** (needs interactive auth; until done, locally signed
-branch commits show as Unverified on GitHub - local verification already
-reports a good signature, and `main` is unaffected). Either:
+**Pending owner sequence** (step 1 needs interactive auth, which automation
+cannot perform; until done, locally signed branch commits show as Unverified
+on GitHub - local verification already reports a good signature, and `main`
+is unaffected).
+
+Step 1 - register the signing key. Either:
 
 ```bash
 gh auth refresh -h github.com -s admin:ssh_signing_key
@@ -126,6 +129,31 @@ gh ssh-key add ~/.ssh/id_ed25519_signing.pub --type signing \
 
 or paste the content of `~/.ssh/id_ed25519_signing.pub` at
 <https://github.com/settings/ssh/new> with key type **Signing Key**.
+
+Step 2 - verify the retroactive flip (an already-pushed signed commit must
+now show `verified: true`):
+
+```bash
+gh api repos/FrancoisLDaigneault/pi-config/commits/1e981bd \
+  --jq '.commit.verification'
+```
+
+Step 3 - re-enable the `required_signatures` rule (gates every PR branch
+commit from then on - do this only after step 2 succeeds):
+
+```bash
+gh api repos/FrancoisLDaigneault/pi-config/rulesets/20945568 -X PUT --input - <<'EOF'
+{"name": "main-protection", "target": "branch", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+ "rules": [{"type": "pull_request", "parameters": {
+    "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false,
+    "require_code_owner_review": false, "require_last_push_approval": false,
+    "required_review_thread_resolution": false}},
+   {"type": "non_fast_forward"}, {"type": "deletion"},
+   {"type": "required_signatures"}],
+ "bypass_actors": []}
+EOF
+```
 
 ## Secret scanning and push protection
 
