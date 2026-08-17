@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from pi_config_tools.fsops import copy_tree, is_excluded_file
+import pytest
+
+from pi_config_tools.fsops import context_mode_version, copy_tree, is_excluded_file
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -51,6 +53,20 @@ def test_copy_tree_preserves_content(tmp_path: Path) -> None:
     dst = tmp_path / "dst"
     assert copy_tree(src, dst) == 1
     assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "deep content"
+
+
+def test_context_mode_version_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    assert context_mode_version() == "unknown (package.json missing)"
+
+
+def test_context_mode_version_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
+    _touch(pkg, "{not json}")
+    assert context_mode_version() == "unknown (package.json unreadable)"
 
 
 def test_is_excluded_file() -> None:

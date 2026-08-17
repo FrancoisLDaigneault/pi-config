@@ -25,7 +25,9 @@ One KPI per axis, measurable, with a real current value. Updated whenever a meas
 | src module / script size | max 142 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
 | Green tests | 29 (15 unit / 12 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (hook + CI) |
 
-## Durability (scalability for this tool)
+## Scalability
+
+(For this tool, scalability means the sync/restore workflow keeps holding as the config grows.)
 
 | KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
