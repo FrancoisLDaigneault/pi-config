@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.3.0...v0.3.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* keep uv.lock in sync with releases, enforce ruff format, fix pyright venv resolution ([#7](https://github.com/FrancoisLDaigneault/pi-config/issues/7)) ([44bfae3](https://github.com/FrancoisLDaigneault/pi-config/commit/44bfae38e1953785252473307fb61a42b4402ac2))
+
 ## [0.3.0](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.2.0...v0.3.0) (2026-08-17)
 
 
