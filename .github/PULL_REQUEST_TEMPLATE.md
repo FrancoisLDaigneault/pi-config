@@ -1,9 +1,9 @@
-## Quoi / Pourquoi
+## What / Why
 
-<!-- Décrivez le changement et sa motivation en une ou deux phrases. -->
+<!-- Describe the change and its motivation in one or two sentences. -->
 
-## Liste de contrôle
+## Checklist
 
-- [ ] `uv run ruff check .` passe sans violation
-- [ ] `uv run pytest -q` est vert
-- [ ] Le titre de la PR suit les Conventional Commits (`feat:`, `fix:`, `ci:`, …)
+- [ ] `uv run ruff check .` passes with no violations
+- [ ] `uv run pytest -q` is green
+- [ ] The PR title follows Conventional Commits (`feat:`, `fix:`, `ci:`, ...)
