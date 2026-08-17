@@ -19,10 +19,6 @@ EXCLUDE_FILE_PATTERNS = [
 ]
 
 
-def is_excluded_file(name: str) -> bool:
-    return any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_FILE_PATTERNS)
-
-
 def copy_tree(
     src: Path,
     dst: Path,
