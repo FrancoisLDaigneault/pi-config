@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/fld-forge/pi-config/compare/v0.4.7...v0.5.0) (2026-08-18)
+
+
+### Features
+
+* preserve every local node_modules patch, drop scaffold-me ([#34](https://github.com/fld-forge/pi-config/issues/34)) ([745d859](https://github.com/fld-forge/pi-config/commit/745d85933daa32c69f7b33977526c5e8191d5745))
+
 ## [0.4.7](https://github.com/fld-forge/pi-config/compare/v0.4.6...v0.4.7) (2026-08-18)
 
 
