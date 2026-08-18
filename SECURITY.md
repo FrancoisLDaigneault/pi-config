@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest [GitHub release](https://github.com/FrancoisLDaigneault/pi-config/releases)
+Only the latest [GitHub release](https://github.com/fld-forge/pi-config/releases)
 is supported. `main` is the development branch; fixes land there first and ship
 with the next release.
 
@@ -10,7 +10,7 @@ with the next release.
 
 Do not open a public issue. Use GitHub's private reporting:
 **Security** tab -> **Report a vulnerability**
-([GitHub Security Advisories](https://github.com/FrancoisLDaigneault/pi-config/security/advisories/new)).
+([GitHub Security Advisories](https://github.com/fld-forge/pi-config/security/advisories/new)).
 
 You will receive an initial response within 7 business days.
 
@@ -29,6 +29,6 @@ To verify a downloaded asset:
 
 ```bash
 gh attestation verify pi_config_tools-<version>-py3-none-any.whl \
-  --repo FrancoisLDaigneault/pi-config
+  --repo fld-forge/pi-config
 sha256sum --check SHA256SUMS   # inside the folder holding the downloaded assets
 ```

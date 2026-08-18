@@ -1,15 +1,15 @@
 # pi-config
 
-[![CI](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/FrancoisLDaigneault/pi-config/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/FrancoisLDaigneault/pi-config/security/code-scanning)
-[![Release](https://img.shields.io/github/v/release/FrancoisLDaigneault/pi-config)](https://github.com/FrancoisLDaigneault/pi-config/releases)
-[![License](https://img.shields.io/github/license/FrancoisLDaigneault/pi-config)](LICENSE)
+[![CI](https://github.com/fld-forge/pi-config/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fld-forge/pi-config/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/fld-forge/pi-config/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fld-forge/pi-config/security/code-scanning)
+[![Release](https://img.shields.io/github/v/release/fld-forge/pi-config)](https://github.com/fld-forge/pi-config/releases)
+[![License](https://img.shields.io/github/license/fld-forge/pi-config)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/FrancoisLDaigneault/pi-config/badge)](https://scorecard.dev/viewer/?uri=github.com/FrancoisLDaigneault/pi-config)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/fld-forge/pi-config/badge)](https://scorecard.dev/viewer/?uri=github.com/fld-forge/pi-config)
 
 Official repository for the Pi configuration (Maestro persona, extensions, prompts, skills, settings). Goal: never lose the configuration, even after a Pi update or a machine reinstall.
 
@@ -150,7 +150,7 @@ Both are covered by `backup.py` **locally only**. Never upload a `pi-backups/` f
 
 ## Release integrity
 
-Each [release](https://github.com/FrancoisLDaigneault/pi-config/releases) ships
+Each [release](https://github.com/fld-forge/pi-config/releases) ships
 the wheel, the sdist, an SPDX SBOM, SHA-256 checksums and GitHub
 build-provenance attestations. See [SECURITY.md](SECURITY.md) for the
 verification commands.
