@@ -55,6 +55,12 @@ def build_fake_home(home: Path) -> Path:
         / "extension.js",
         "// patched",
     )
+    # Directory entry of PATCHED_RELS: snapshotted whole (the bigpowers entries stay
+    # absent on purpose, so the missing-entry branch is exercised too).
+    touch(
+        agent / "npm" / "node_modules" / "context-mode" / "skills" / "ctx-stats" / "SKILL.md",
+        "# Stats",
+    )
     skills = home / ".agents" / "skills"
     touch(skills / "scaffold" / "SKILL.md", "# Scaffold")
     touch(skills / "scaffold" / "__pycache__" / "m.pyc", "bin")

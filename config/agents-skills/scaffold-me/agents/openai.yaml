@@ -1,4 +1,0 @@
-interface:
-  display_name: "Scaffold Me"
-  short_description: "Create lean, verified greenfield projects"
-  default_prompt: "Use $scaffold-me to design and generate a verified project scaffold."

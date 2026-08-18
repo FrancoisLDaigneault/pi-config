@@ -38,6 +38,20 @@ def _skip_repo_doc(src_root: Path, src: Path, rel: Path) -> bool:
     return is_patch_root and src.name == "README.md" and len(rel.parts) == 1
 
 
+def _overwrite_note(src: Path, dst: Path) -> str:
+    """Flags a live file whose content differs from the snapshot.
+
+    A patched vendor file legitimately differs before restore; an upstream file
+    updated since the last sync also does. Either way it is named, never silently
+    clobbered. Re-running on an already-restored tree reports '(identical)'.
+    """
+    if not dst.is_file():
+        return ""
+    if dst.read_bytes() == src.read_bytes():
+        return "  (identical)"
+    return "  (DIFFERS from the live file - overwriting)"
+
+
 def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
     count = 0
     for src in list_files(src_root):
@@ -48,7 +62,8 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
         if _skip_repo_doc(src_root, src, rel):
             continue
         dst = dst_root / rel
-        print(f"  {'copying' if apply else 'would copy'}: {rel}  ->  {dst}")
+        note = _overwrite_note(src, dst)
+        print(f"  {'copying' if apply else 'would copy'}: {rel}  ->  {dst}{note}")
         if apply:
             copy_file(src, dst)
         count += 1

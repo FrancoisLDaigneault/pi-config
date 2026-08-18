@@ -40,6 +40,29 @@ def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     assert not (config / "pi-agent" / "npm" / "node_modules").exists()
 
 
+def test_sync_copies_a_patched_directory_whole(sandbox: tuple[Path, Path]) -> None:
+    """A directory entry of PATCHED_RELS is snapshotted with its whole content."""
+    _home, repo = sandbox
+    assert main() == 0
+    skill = repo / "config" / "patched-node_modules" / "context-mode" / "skills"
+    assert (skill / "ctx-stats" / "SKILL.md").read_text(encoding="utf-8") == "# Stats"
+    # The generated README lists every configured entry, not just the single file
+    readme = (repo / "config" / "patched-node_modules" / "README.md").read_text(encoding="utf-8")
+    assert "context-mode/skills" in readme
+    assert "bigpowers/skills" in readme
+
+
+def test_sync_reports_missing_patched_entry(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The bigpowers entries are absent from the sandbox: reported, never silent."""
+    _home, repo = sandbox
+    assert main() == 0
+    out = capsys.readouterr().out
+    assert "bigpowers/.pi/skills missing from node_modules, skipped" in out
+    assert not (repo / "config" / "patched-node_modules" / "bigpowers").exists()
+
+
 def test_sync_redacts_secrets(sandbox: tuple[Path, Path]) -> None:
     _home, repo = sandbox
     assert main() == 0

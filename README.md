@@ -120,7 +120,7 @@ gh pr create --fill          # squash-merge once the checks are green
 This machine also runs a daily scheduled backup task (`pi-config-daily-backup`,
 19:00) as a machine-side safeguard; it is not installed by this repository.
 
-After an `npm update` of context-mode: the patched file `config/patched-node_modules/context-mode/build/adapters/pi/extension.js` is overwritten on the live side - restore it with `uv run scripts/restore.py --apply --patch` (see `config/patched-node_modules/README.md`).
+After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`, whose generated `README.md` lists the covered entries (`paths.PATCHED_RELS`: the context-mode extension plus the vendored skill directories, snapshotted whole so local edits inside them are never lost).
 
 If `sync.py` fails midway (unreadable JSON, permission denied), `config/` may be left partial: recover it with `git restore config/`.
 

@@ -6,9 +6,10 @@ Usage: uv run scripts/sync.py
 import json
 import shutil
 import sys
+from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import context_mode_version, copy_file, copy_tree
+from pi_config_tools.fsops import context_mode_version, copy_file, copy_patched, copy_tree
 from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
 # Items of .pi/agent to version (folders and files, relative paths)
@@ -82,25 +83,29 @@ def _sync_agent_files() -> tuple[int, list[str]] | None:
     return total, redacted
 
 
-def _sync_patch() -> int:
-    """Patched file in node_modules (overwritten by any npm update)."""
-    patched_src = paths.patched_live()
-    if not patched_src.is_file():
-        print("  warning: context-mode patch missing, skipped")
-        return 0
-    dest_root = paths.config_dir() / "patched-node_modules"
-    copy_file(patched_src, dest_root / paths.PATCHED_REL)
-    version = context_mode_version()
+def _write_patch_readme(dest_root: Path) -> None:
+    entries = "\n".join(f"- `{rel.as_posix()}`" for rel in paths.PATCHED_RELS)
     (dest_root / "README.md").write_text(
         "# Patched files in node_modules\n\n"
-        f"- `{paths.PATCHED_REL.as_posix()}` - local patch applied to context-mode "
-        f"(version at sync time: {version}).\n\n"
-        "Any `npm update` of context-mode overwrites this file: copy it back from "
-        "here after each update (or via `uv run scripts/restore.py --apply`).\n",
+        "Local modifications to installed packages, versioned here because any "
+        "`npm install` or package update overwrites them. Directory entries are "
+        "snapshotted whole, so every local edit inside them is preserved:\n\n"
+        f"{entries}\n\n"
+        f"context-mode version at sync time: {context_mode_version()}.\n\n"
+        "Copy them back after each update with "
+        "`uv run scripts/restore.py --apply --patch`.\n",
         encoding="utf-8",
     )
-    print(f"  patched-node_modules : extension.js + README (context-mode {version})")
-    return 2
+
+
+def _sync_patch() -> int:
+    """Patched entries in node_modules (overwritten by any npm update)."""
+    dest_root = paths.config_dir() / "patched-node_modules"
+    total = copy_patched(dest_root)
+    if not total:
+        return 0
+    _write_patch_readme(dest_root)
+    return total + 1
 
 
 def _sync_skills() -> int:
