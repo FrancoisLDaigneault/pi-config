@@ -6,9 +6,7 @@ restores it on a fresh machine, and makes full local backups.
 
 Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
 `scripts/` (thin wrappers), `tests/` (unit / integration / e2e), `hooks/`
-(versioned pre-commit hook), `config/` (the synced snapshot), `governance/`
-(machine-readable platform-settings baseline plus bootstrap/audit scripts
-for every owned repo - see `governance/README.md`).
+(versioned pre-commit hook), `config/` (the synced snapshot).
 
 ## Hard rules
 
