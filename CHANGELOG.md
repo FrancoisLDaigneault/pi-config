@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.5...v0.4.6) (2026-08-18)
+
+
+### Documentation
+
+* remove repository-settings material from the repository ([#28](https://github.com/FrancoisLDaigneault/pi-config/issues/28)) ([502e865](https://github.com/FrancoisLDaigneault/pi-config/commit/502e865c43d6893a82fec27597335c3e631177f8))
+
 ## [0.4.5](https://github.com/FrancoisLDaigneault/pi-config/compare/v0.4.4...v0.4.5) (2026-08-17)
 
 
