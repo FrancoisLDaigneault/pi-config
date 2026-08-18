@@ -63,6 +63,15 @@ for repo in "${REPOS[@]}"; do
     fi
   done <<< "$OUTPUT"
 
+  # An archived repo is read-only: bootstrap reports it and exits 0 without
+  # emitting any control. That is a clean skip, not a half-audited repo.
+  # (--all filters archived repos; this covers an explicitly named one.)
+  if [[ "$STATUS" -eq 0 && "$COUNT" -eq 0 ]] \
+    && grep -q ' is archived (read-only)' <<< "$OUTPUT"; then
+    echo "skipping archived $repo" >&2
+    continue
+  fi
+
   # bootstrap exits 0 (clean) or 1 (drift/error/skip); anything else, or a
   # short control list, means the run aborted - surface it, never drop it.
   if [[ "$STATUS" -gt 1 || "$COUNT" -lt "$EXPECTED_COUNT" ]]; then

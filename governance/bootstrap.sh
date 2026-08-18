@@ -12,8 +12,11 @@
 # This is DESIRED STATE, not a minimum floor: any difference from the baseline
 # is drift in both directions, so applying it can lower a setting that was
 # stricter locally. Rulesets are guarded against exactly that: a live ruleset
-# carrying extra rule types or stricter review requirements is reported
-# STRICTER-THAN-BASELINE and skipped unless --force-normalize is passed.
+# carrying extra rule types, stricter review requirements, or a wider ref
+# scope (more protected refs, or fewer exclusions) is reported
+# STRICTER-THAN-BASELINE and skipped unless --force-normalize is passed. The
+# guard covers rulesets only - the other controls are boolean or enum enable
+# flags whose baseline value is already the strict one.
 # Fields the baseline deliberately does not govern are never forced - where
 # the API requires them in the request body they are read live and echoed back
 # unchanged (see apply_preserve in baseline.json).
@@ -91,6 +94,7 @@ with open(sys.argv[1], encoding="utf-8") as fh:
 # A failed read sets READ_ERR instead: a read error is an error, never drift,
 # and never falls through to a corrective write.
 read_live() {
+  LIVE=""
   RULESET_ID=""
   READ_ERR=""
   local out
@@ -133,9 +137,10 @@ read_live() {
   esac
 }
 
-# Rule types / parameters that exist live but are stricter than the baseline
-# asks for. Prints one "- ..." line per extra; empty output means the live
-# ruleset is not stricter. Only called for an existing ruleset that drifts.
+# Rule types, review parameters or ref scope that exist live but are stricter
+# than the baseline asks for. Prints one "- ..." line per extra; empty output
+# means the live ruleset is not stricter. Only called for an existing ruleset
+# that drifts. A non-zero exit means the check itself failed (never "clean").
 stricter_extras() {
   gh api "repos/$REPO/rulesets/$RULESET_ID" 2>/dev/null \
     | DESIRED_JSON="$DESIRED" python -c '
@@ -149,6 +154,14 @@ extras = []
 live_types = {r["type"] for r in live.get("rules", [])}
 for t in sorted(live_types - set(desired.get("rule_types", []))):
     extras.append(f"- extra rule type: {t}")
+# Ref scope: protecting more refs (or excluding fewer) is stricter, and
+# normalizing would silently narrow that protection.
+live_ref = live.get("conditions", {}).get("ref_name", {})
+want_ref = desired.get("conditions", {}).get("ref_name", {})
+for ref in sorted(set(live_ref.get("include", [])) - set(want_ref.get("include", []))):
+    extras.append(f"- extra protected ref: {ref}")
+for ref in sorted(set(want_ref.get("exclude", [])) - set(live_ref.get("exclude", []))):
+    extras.append(f"- ref excluded by baseline but protected live: {ref}")
 live_pr = next((r.get("parameters", {}) for r in live.get("rules", [])
                 if r["type"] == "pull_request"), None)
 wanted_pr = desired.get("pr")
@@ -176,7 +189,14 @@ apply_control() {
   # Fields the API requires in the body but the baseline does not govern:
   # read them live and echo them back unchanged instead of forcing a value.
   if [[ "$PRESERVE" != "-" && "$body" != "-" ]]; then
-    keep=$(gh api "${READ_EP/\{repo\}/$REPO}" --jq "$PRESERVE")
+    # The preserved value must provably come from a successful read: a failed,
+    # empty or null read refuses the write rather than sending a partial body
+    # to a privileged endpoint.
+    if ! keep=$(gh api "${READ_EP/\{repo\}/$REPO}" --jq "$PRESERVE") \
+      || [[ -z "$keep" || "$keep" == *null* ]]; then
+      echo "preserve read failed or empty ($PRESERVE); refusing to write" >&2
+      return 1
+    fi
     body=$(BODY="$body" KEEP="$keep" python -c '
 import json, os
 merged = dict(json.loads(os.environ["KEEP"]))
@@ -241,11 +261,19 @@ for CID in $(control_ids); do
   # Desired-state normalization would lower a stricter live ruleset: refuse
   # unless the operator explicitly asks for it.
   if [[ "$KIND" == "ruleset" && -n "$RULESET_ID" ]] && ! $FORCE_NORMALIZE; then
-    EXTRAS=$(stricter_extras)
+    # A failed check must never read as "not stricter": refuse to normalize.
+    if ! EXTRAS=$(stricter_extras); then
+      echo "CTL $CID ERR"
+      echo "     stricter-than-baseline check failed; refusing to normalize"
+      ERROR_COUNT=$((ERROR_COUNT + 1))
+      continue
+    fi
     if [[ -n "$EXTRAS" ]]; then
       echo "CTL $CID STRICTER-THAN-BASELINE"
       echo "     live ruleset is stricter than the baseline; skipped"
-      echo "$EXTRAS" | sed 's/^/     /'
+      while IFS= read -r extra; do
+        echo "     $extra"
+      done <<< "$EXTRAS"
       echo "     re-run with --force-normalize to overwrite it with the baseline"
       SKIP_COUNT=$((SKIP_COUNT + 1))
       continue

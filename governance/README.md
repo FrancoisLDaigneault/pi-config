@@ -58,10 +58,14 @@ radius:
 
 - **Rulesets are guarded.** Before overwriting an existing ruleset,
   `bootstrap.sh` compares it to the baseline; extra rule types, a higher
-  `required_approving_review_count` or extra review requirements are
-  reported as `STRICTER-THAN-BASELINE` and the control is **skipped**
+  `required_approving_review_count`, extra review requirements, or a wider
+  ref scope (protecting refs the baseline does not, or excluding fewer)
+  are reported as `STRICTER-THAN-BASELINE` and the control is **skipped**
   (in dry-run *and* in `--apply`). Overwriting it is opt-in, via
-  `--force-normalize`.
+  `--force-normalize`. If the check itself cannot run, the control renders
+  `ERR` and is never normalized. The guard covers rulesets only: the other
+  controls are boolean or enum enable flags whose baseline value is already
+  the strict one.
 - **Ungoverned fields are preserved, never forced.** Where the API demands
   a field in the request body that the baseline deliberately does not
   govern, `apply_preserve` reads the live value and echoes it back
