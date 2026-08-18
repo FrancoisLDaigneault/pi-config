@@ -3,6 +3,10 @@
     "mempalace": {
       "command": "C:\\Users\\franc\\.local\\bin\\mempalace-mcp.exe",
       "args": []
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "protocolVersion": "auto"
     }
   }
 }
