@@ -16,7 +16,7 @@
   "lastChangelogVersion": "0.84.2",
   "theme": "dark",
   "defaultProvider": "claude-bridge",
-  "defaultModel": "claude-opus-5",
+  "defaultModel": "claude-fable-5",
   "defaultThinkingLevel": "high",
   "subagents": {
     "agentOverrides": {
@@ -32,24 +32,24 @@
         "model": "claude-bridge/claude-fable-5",
         "thinking": "high",
         "fallbackModels": [
-          "claude-bridge/claude-opus-5"
+          "openai-codex/gpt-5.6-sol"
         ]
       },
       "oracle": {
         "model": "claude-bridge/claude-fable-5",
         "thinking": "high",
         "fallbackModels": [
-          "claude-bridge/claude-opus-5"
+          "openai-codex/gpt-5.6-sol"
         ]
       },
       "worker": {
         "fallbackModels": [
-          "claude-bridge/claude-opus-5"
+          "openai-codex/gpt-5.6-sol"
         ]
       },
       "delegate": {
         "fallbackModels": [
-          "claude-bridge/claude-opus-5"
+          "openai-codex/gpt-5.6-sol"
         ]
       }
     }

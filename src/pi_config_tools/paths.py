@@ -18,6 +18,7 @@ PATCHED_RELS: tuple[Path, ...] = (
     Path("bigpowers/.pi/skills"),
     Path("bigpowers/skills"),
     Path("bigpowers/scripts"),
+    Path("pi-mcp-adapter/ui-server.ts"),
 )
 
 
