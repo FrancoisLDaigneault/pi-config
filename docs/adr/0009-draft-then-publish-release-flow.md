@@ -5,8 +5,8 @@
 
 ## Context
 
-Immutable releases (enabled in this repo, see `docs/repo-settings.md`) lock a
-release and its tag at publish time. Our `release-assets` job uploaded assets
+Immutable releases, enabled for this repository, lock a release and its tag
+at publish time. Our `release-assets` job uploaded assets
 AFTER release-please published the release - so v0.4.3 failed with the
 verbatim error `HTTP 422: Cannot upload assets to an immutable release.` and
 is permanently assetless (immutability survives even disabling the setting).
