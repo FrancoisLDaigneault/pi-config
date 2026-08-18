@@ -7,6 +7,8 @@
     "projection is a jq filter applied to the read endpoint response; it extracts exactly the fields this baseline governs, so server-added defaults never cause false drift",
     "desired is the expected projection output; comparison is done on canonical JSON (sorted keys, compact separators)",
     "apply_payload is sent with --input - as the request body; controls without a payload send an empty body",
+    "apply_preserve is a jq filter read from the live read endpoint and merged into apply_payload before the corrective call: it carries forward fields the API requires in the body but the baseline deliberately does not govern",
+    "desired-state, not a minimum floor: a live setting stricter than the baseline is reported as drift, and for rulesets it is protected by the stricter-than-baseline guard (see bootstrap.sh --force-normalize)",
     "applicability public: free-plan personal accounts only get this control on public repos (rulesets need GitHub Pro on private repos; code scanning, secret scanning and private vulnerability reporting are public-only without paid add-ons)",
     "machine-local git signing config (docs/repo-settings.md, commit signing section) is out of scope: it is not a repository platform setting reachable through the API"
   ],
@@ -169,14 +171,15 @@
     {
       "id": "actions-workflow-permissions",
       "kind": "json",
-      "description": "Default GITHUB_TOKEN permissions read-only; workflows may create/approve PRs (required by release automation)",
+      "description": "Default GITHUB_TOKEN permissions read-only. can_approve_pull_request_reviews is deliberately NOT governed: forcing it true would loosen GitHub's stricter default on every repo. The corrective call preserves the live value (repos using release-please need it true - set it per repo).",
       "applicability": "all",
       "read_endpoint": "repos/{repo}/actions/permissions/workflow",
-      "projection": "{can_approve_pull_request_reviews, default_workflow_permissions}",
-      "desired": {"can_approve_pull_request_reviews": true, "default_workflow_permissions": "read"},
+      "projection": "{default_workflow_permissions}",
+      "desired": {"default_workflow_permissions": "read"},
       "apply_method": "PUT",
       "apply_endpoint": "repos/{repo}/actions/permissions/workflow",
-      "apply_payload": {"default_workflow_permissions": "read", "can_approve_pull_request_reviews": true}
+      "apply_payload": {"default_workflow_permissions": "read"},
+      "apply_preserve": "{can_approve_pull_request_reviews}"
     }
   ]
 }

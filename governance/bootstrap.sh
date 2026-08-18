@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 # Apply the governance baseline (governance/baseline.json) to one repository.
 #
-# Usage: governance/bootstrap.sh OWNER/REPO [--apply]
+# Usage: governance/bootstrap.sh OWNER/REPO [--apply] [--force-normalize]
 #
-# Dry-run by default: prints one status line per control (OK / DRIFT / NA)
-# plus the desired-vs-live diff for every drift, and exits 1 if any control
-# drifts. With --apply, corrective API calls are executed and each control is
-# re-checked afterwards (APPLIED / FAIL). Re-running on a compliant repo makes
-# zero changes and exits 0 (idempotent). The script is additive/corrective
-# only: it never disables anything outside the baseline scope.
+# Dry-run by default: prints one status line per control (OK / DRIFT / NA /
+# ERR) plus the desired-vs-live diff for every drift, and exits 1 if any
+# control drifts or errors. With --apply, corrective API calls are executed
+# and each control is re-checked afterwards (APPLIED / FAIL). Re-running on a
+# compliant repo makes zero changes and exits 0 (idempotent).
 #
-# Requirements: gh (authenticated, repo scope), python 3 on PATH.
+# This is DESIRED STATE, not a minimum floor: any difference from the baseline
+# is drift in both directions, so applying it can lower a setting that was
+# stricter locally. Rulesets are guarded against exactly that: a live ruleset
+# carrying extra rule types or stricter review requirements is reported
+# STRICTER-THAN-BASELINE and skipped unless --force-normalize is passed.
+# Fields the baseline deliberately does not govern are never forced - where
+# the API requires them in the request body they are read live and echoed back
+# unchanged (see apply_preserve in baseline.json).
+#
+# Requirements: gh (authenticated, repo scope) and python 3 reachable as the
+# command `python` (Git Bash on Windows is the supported environment).
 # Machine-readable output: lines starting with "CTL " (used by audit.sh).
 set -euo pipefail
 
@@ -19,11 +28,23 @@ BASELINE="$SCRIPT_DIR/baseline.json"
 
 REPO="${1:-}"
 [[ -z "$REPO" || "$REPO" == --* ]] && {
-  echo "usage: $0 OWNER/REPO [--apply]" >&2
+  echo "usage: $0 OWNER/REPO [--apply] [--force-normalize]" >&2
   exit 2
 }
 APPLY=false
-[[ "${2:-}" == "--apply" ]] && APPLY=true
+FORCE_NORMALIZE=false
+shift
+for arg in "$@"; do
+  case "$arg" in
+    --apply) APPLY=true ;;
+    --force-normalize) FORCE_NORMALIZE=true ;;
+    *)
+      echo "unknown argument: $arg" >&2
+      echo "usage: $0 OWNER/REPO [--apply] [--force-normalize]" >&2
+      exit 2
+      ;;
+  esac
+done
 
 # Canonical JSON (sorted keys, compact) so projections compare as strings.
 # tr strips the CR that Python text-mode stdout emits on Windows.
@@ -53,6 +74,7 @@ print(c["apply_method"])
 print(c["apply_endpoint"])
 print(dump(c["apply_payload"]) if "apply_payload" in c else "-")
 print(dump(c["desired"]))
+print(c.get("apply_preserve", "-"))
 ' "$BASELINE" | tr -d '\r'
 }
 
@@ -66,46 +88,105 @@ with open(sys.argv[1], encoding="utf-8") as fh:
 
 # Read the live projected state of a control. Sets LIVE (canonical JSON) and,
 # for rulesets, RULESET_ID (empty when the ruleset does not exist yet).
+# A failed read sets READ_ERR instead: a read error is an error, never drift,
+# and never falls through to a corrective write.
 read_live() {
   RULESET_ID=""
+  READ_ERR=""
+  local out
   case "$KIND" in
     ruleset)
-      RULESET_ID=$(gh api "${READ_EP/\{repo\}/$REPO}" \
-        --jq "[.[] | select(.name==\"$RS_NAME\")][0].id // empty")
+      # includes_parents=false: after the org migration a parent ruleset could
+      # otherwise match by name and the repo-level follow-up call would 404.
+      if ! out=$(gh api "${READ_EP/\{repo\}/$REPO}?includes_parents=false" \
+        --jq "[.[] | select(.name==\"$RS_NAME\")][0].id // empty" 2>&1); then
+        READ_ERR=$(echo "$out" | head -1)
+        return 0
+      fi
+      RULESET_ID="$out"
       if [[ -z "$RULESET_ID" ]]; then
         LIVE='"absent"'
+      elif ! out=$(gh api "repos/$REPO/rulesets/$RULESET_ID" --jq "$PROJECTION" 2>&1); then
+        READ_ERR=$(echo "$out" | head -1)
       else
-        LIVE=$(gh api "repos/$REPO/rulesets/$RULESET_ID" --jq "$PROJECTION" | canon)
+        LIVE=$(printf '%s' "$out" | canon)
       fi
       ;;
     status204)
-      if gh api "${READ_EP/\{repo\}/$REPO}" >/dev/null 2>&1; then
+      # 204 = enabled, 404 = disabled; anything else (401/403/5xx) is a read
+      # error and must not be mistaken for "disabled".
+      if out=$(gh api "${READ_EP/\{repo\}/$REPO}" 2>&1); then
         LIVE='{"enabled":true}'
-      else
+      elif grep -q 'HTTP 404' <<< "$out"; then
         LIVE='{"enabled":false}'
+      else
+        READ_ERR=$(echo "$out" | head -1)
       fi
       ;;
     json)
-      if ! LIVE=$(gh api "${READ_EP/\{repo\}/$REPO}" --jq "$PROJECTION" 2>&1); then
-        LIVE="\"read-error: $(echo "$LIVE" | head -1)\""
+      if ! out=$(gh api "${READ_EP/\{repo\}/$REPO}" --jq "$PROJECTION" 2>&1); then
+        READ_ERR=$(echo "$out" | head -1)
         return 0
       fi
-      LIVE=$(printf '%s' "$LIVE" | canon)
+      LIVE=$(printf '%s' "$out" | canon)
       ;;
   esac
 }
 
+# Rule types / parameters that exist live but are stricter than the baseline
+# asks for. Prints one "- ..." line per extra; empty output means the live
+# ruleset is not stricter. Only called for an existing ruleset that drifts.
+stricter_extras() {
+  gh api "repos/$REPO/rulesets/$RULESET_ID" 2>/dev/null \
+    | DESIRED_JSON="$DESIRED" python -c '
+import json, os, sys
+try:
+    live = json.load(sys.stdin)
+except ValueError:
+    sys.exit(0)
+desired = json.loads(os.environ["DESIRED_JSON"])
+extras = []
+live_types = {r["type"] for r in live.get("rules", [])}
+for t in sorted(live_types - set(desired.get("rule_types", []))):
+    extras.append(f"- extra rule type: {t}")
+live_pr = next((r.get("parameters", {}) for r in live.get("rules", [])
+                if r["type"] == "pull_request"), None)
+wanted_pr = desired.get("pr")
+if live_pr and wanted_pr:
+    live_n = live_pr.get("required_approving_review_count", 0)
+    want_n = wanted_pr.get("required_approving_review_count", 0)
+    if live_n > want_n:
+        extras.append(
+            f"- required_approving_review_count: live {live_n} > baseline {want_n}")
+    for flag in ("dismiss_stale_reviews_on_push", "require_code_owner_review",
+                 "require_last_push_approval", "required_review_thread_resolution"):
+        if live_pr.get(flag) and not wanted_pr.get(flag):
+            extras.append(f"- {flag}: enabled live, not required by baseline")
+print("\n".join(extras))
+' | tr -d '\r'
+}
+
 # Run the corrective call for a control (assumes read_live ran before).
 apply_control() {
-  local method="$METHOD" endpoint="${APPLY_EP/\{repo\}/$REPO}"
+  local method="$METHOD" endpoint="${APPLY_EP/\{repo\}/$REPO}" body="$PAYLOAD" keep
   if [[ "$KIND" == "ruleset" && -n "$RULESET_ID" ]]; then
     method="PUT"
     endpoint="repos/$REPO/rulesets/$RULESET_ID"
   fi
-  if [[ "$PAYLOAD" == "-" ]]; then
+  # Fields the API requires in the body but the baseline does not govern:
+  # read them live and echo them back unchanged instead of forcing a value.
+  if [[ "$PRESERVE" != "-" && "$body" != "-" ]]; then
+    keep=$(gh api "${READ_EP/\{repo\}/$REPO}" --jq "$PRESERVE")
+    body=$(BODY="$body" KEEP="$keep" python -c '
+import json, os
+merged = dict(json.loads(os.environ["KEEP"]))
+merged.update(json.loads(os.environ["BODY"]))
+print(json.dumps(merged, sort_keys=True, separators=(",", ":")))' | tr -d '\r')
+  fi
+  if [[ "$body" == "-" ]]; then
     gh api -X "$method" "$endpoint" >/dev/null
   else
-    printf '%s' "$PAYLOAD" | gh api -X "$method" "$endpoint" --input - >/dev/null
+    printf '%s' "$body" | gh api -X "$method" "$endpoint" --input - >/dev/null
   fi
 }
 
@@ -122,6 +203,8 @@ echo "== governance bootstrap: $REPO (visibility: $VISIBILITY, mode: $MODE) =="
 
 DRIFT_COUNT=0
 FAIL_COUNT=0
+ERROR_COUNT=0
+SKIP_COUNT=0
 for CID in $(control_ids); do
   {
     read -r KIND
@@ -133,6 +216,7 @@ for CID in $(control_ids); do
     read -r APPLY_EP
     read -r PAYLOAD
     read -r DESIRED
+    read -r PRESERVE
   } < <(manifest "$CID")
 
   if [[ "$APPLICABILITY" == "public" && "$VISIBILITY" != "public" ]]; then
@@ -142,9 +226,30 @@ for CID in $(control_ids); do
   fi
 
   read_live
+  if [[ -n "$READ_ERR" ]]; then
+    echo "CTL $CID ERR"
+    echo "     read failed: $READ_ERR"
+    ERROR_COUNT=$((ERROR_COUNT + 1))
+    continue
+  fi
+
   if [[ "$LIVE" == "$DESIRED" ]]; then
     echo "CTL $CID OK"
     continue
+  fi
+
+  # Desired-state normalization would lower a stricter live ruleset: refuse
+  # unless the operator explicitly asks for it.
+  if [[ "$KIND" == "ruleset" && -n "$RULESET_ID" ]] && ! $FORCE_NORMALIZE; then
+    EXTRAS=$(stricter_extras)
+    if [[ -n "$EXTRAS" ]]; then
+      echo "CTL $CID STRICTER-THAN-BASELINE"
+      echo "     live ruleset is stricter than the baseline; skipped"
+      echo "$EXTRAS" | sed 's/^/     /'
+      echo "     re-run with --force-normalize to overwrite it with the baseline"
+      SKIP_COUNT=$((SKIP_COUNT + 1))
+      continue
+    fi
   fi
 
   if ! $APPLY; then
@@ -157,7 +262,11 @@ for CID in $(control_ids); do
 
   if ERR=$(apply_control 2>&1); then
     read_live
-    if [[ "$LIVE" == "$DESIRED" ]]; then
+    if [[ -n "$READ_ERR" ]]; then
+      echo "CTL $CID ERR"
+      echo "     applied, but the re-check read failed: $READ_ERR"
+      ERROR_COUNT=$((ERROR_COUNT + 1))
+    elif [[ "$LIVE" == "$DESIRED" ]]; then
       echo "CTL $CID APPLIED"
     else
       echo "CTL $CID FAIL"
@@ -173,10 +282,14 @@ for CID in $(control_ids); do
   fi
 done
 
+SUMMARY_SUFFIX=""
+[[ "$ERROR_COUNT" -gt 0 ]] && SUMMARY_SUFFIX+=", $ERROR_COUNT error(s)"
+[[ "$SKIP_COUNT" -gt 0 ]] && SUMMARY_SUFFIX+=", $SKIP_COUNT stricter-than-baseline skip(s)"
+
 if $APPLY; then
-  echo "== done: $FAIL_COUNT failure(s) =="
-  [[ "$FAIL_COUNT" -eq 0 ]] || exit 1
+  echo "== done: $FAIL_COUNT failure(s)$SUMMARY_SUFFIX =="
+  [[ "$FAIL_COUNT" -eq 0 && "$ERROR_COUNT" -eq 0 && "$SKIP_COUNT" -eq 0 ]] || exit 1
 else
-  echo "== done: $DRIFT_COUNT drift(s) =="
-  [[ "$DRIFT_COUNT" -eq 0 ]] || exit 1
+  echo "== done: $DRIFT_COUNT drift(s)$SUMMARY_SUFFIX =="
+  [[ "$DRIFT_COUNT" -eq 0 && "$ERROR_COUNT" -eq 0 && "$SKIP_COUNT" -eq 0 ]] || exit 1
 fi

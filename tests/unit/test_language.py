@@ -35,6 +35,8 @@ def _explicit_files() -> list[Path]:
         REPO / "NORTHSTAR.md",
         REPO / "docs" / "adr" / "README.md",
         REPO / "governance" / "README.md",
+        REPO / "governance" / "bootstrap.sh",
+        REPO / "governance" / "audit.sh",
         REPO / ".github" / "PULL_REQUEST_TEMPLATE.md",
         REPO / ".github" / "dependabot.yml",
     ]

@@ -5,11 +5,18 @@
 #
 # --all enumerates every non-archived repository owned by the authenticated
 # user. Each repository is checked with bootstrap.sh in dry-run mode; the
-# result is a per-repo / per-control compliance matrix (OK / DRIFT / NA).
-# Exit 1 when any control drifts anywhere - this is the drift detector that
-# closes the hand-maintained docs/repo-settings.md gap when run regularly.
+# result is a per-repo / per-control compliance matrix (OK / DRIFT / NA / ERR
+# / STRICT). Exit 1 when any control drifts, errors or is skipped anywhere -
+# this is the drift detector that closes the hand-maintained
+# docs/repo-settings.md gap when run regularly.
 #
-# Requirements: gh (authenticated, repo scope), python 3 on PATH.
+# A repository whose check aborts or returns fewer controls than the baseline
+# defines is rendered as an ERR row (never silently dropped) and its captured
+# output is printed under the matrix, so the audit can never exit 0 with a
+# repository unaudited or half-audited.
+#
+# Requirements: gh (authenticated, repo scope) and python 3 reachable as the
+# command `python` (Git Bash on Windows is the supported environment).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,15 +36,46 @@ else
   exit 2
 fi
 
+# Every control the baseline defines: used to detect a half-audited repo.
+ALL_CONTROLS=$(python -c '
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    print("\n".join(c["id"] for c in json.load(fh)["controls"]))
+' "$SCRIPT_DIR/baseline.json" | tr -d '\r')
+EXPECTED_COUNT=$(printf '%s\n' "$ALL_CONTROLS" | grep -c .)
+
 RESULTS=""
+ERROR_LOG=""
 for repo in "${REPOS[@]}"; do
   echo "auditing $repo ..." >&2
-  OUTPUT=$("$SCRIPT_DIR/bootstrap.sh" "$repo" 2>&1) || true
+  set +e
+  OUTPUT=$("$SCRIPT_DIR/bootstrap.sh" "$repo" 2>&1)
+  STATUS=$?
+  set -e
+
+  SEEN=""
+  COUNT=0
   while IFS= read -r line; do
-    [[ "$line" == CTL\ * ]] && RESULTS+="$repo ${line#CTL }"$'\n'
+    if [[ "$line" == CTL\ * ]]; then
+      RESULTS+="$repo ${line#CTL }"$'\n'
+      SEEN+="${line#CTL }"$'\n'
+      COUNT=$((COUNT + 1))
+    fi
   done <<< "$OUTPUT"
+
+  # bootstrap exits 0 (clean) or 1 (drift/error/skip); anything else, or a
+  # short control list, means the run aborted - surface it, never drop it.
+  if [[ "$STATUS" -gt 1 || "$COUNT" -lt "$EXPECTED_COUNT" ]]; then
+    while IFS= read -r control; do
+      [[ -z "$control" ]] && continue
+      grep -q "^$control " <<< "$SEEN" || RESULTS+="$repo $control ERR"$'\n'
+    done <<< "$ALL_CONTROLS"
+    ERROR_LOG+="--- $repo (exit $STATUS, $COUNT/$EXPECTED_COUNT controls) ---"$'\n'
+    ERROR_LOG+="$(printf '%s\n' "$OUTPUT" | tail -5)"$'\n\n'
+  fi
 done
 
+set +e
 printf '%s' "$RESULTS" | python -c '
 import sys
 
@@ -57,25 +95,41 @@ if not rows:
     sys.exit(2)
 
 codes = {c: f"C{i + 1}" for i, c in enumerate(controls)}
-mark = {"OK": "OK", "DRIFT": "DRIFT", "NA": "-"}
+mark = {"OK": "OK", "DRIFT": "DRIFT", "NA": "-",
+        "STRICTER-THAN-BASELINE": "STRICT"}
 repo_w = max(len(r) for r in rows)
-col_w = max(5, *(len(codes[c]) for c in controls))
+col_w = max(6, *(len(codes[c]) for c in controls))
 
 print("legend: " + ", ".join(f"{codes[c]}={c}" for c in controls))
-print("cells: OK = compliant, DRIFT = differs from baseline, - = not applicable")
+print("cells: OK = compliant, DRIFT = differs from baseline, - = not applicable,")
+print("       ERR = could not be checked, STRICT = live is stricter (skipped)")
 print()
 header = "repo".ljust(repo_w) + "  " + "  ".join(codes[c].ljust(col_w) for c in controls)
 print(header)
 print("-" * len(header))
 drift = 0
+bad = 0
 for repo in sorted(rows):
     cells = []
     for c in controls:
         status = rows[repo].get(c, "?")
         drift += status == "DRIFT"
+        bad += status not in ("OK", "DRIFT", "NA")
         cells.append(mark.get(status, status).ljust(col_w))
     print(repo.ljust(repo_w) + "  " + "  ".join(cells))
 print()
 print(f"total drift cells: {drift}")
-sys.exit(1 if drift else 0)
+if bad:
+    print(f"total unchecked/skipped cells: {bad}")
+sys.exit(1 if drift or bad else 0)
 '
+AUDIT_STATUS=$?
+set -e
+
+if [[ -n "$ERROR_LOG" ]]; then
+  echo
+  echo "== repositories that could not be fully audited =="
+  printf '%s' "$ERROR_LOG"
+fi
+
+exit "$AUDIT_STATUS"
