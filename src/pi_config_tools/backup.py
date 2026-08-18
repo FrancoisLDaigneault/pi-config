@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import context_mode_version, copy_file, copy_tree
+from pi_config_tools.fsops import context_mode_version, copy_patched, copy_tree
 
 
 def default_destination(now: datetime | None = None) -> Path:
@@ -35,17 +35,17 @@ def _backup_pi_agent(dest: Path) -> int:
 
 
 def _backup_patch(dest: Path) -> int:
-    patched = paths.patched_live()
-    if not patched.is_file():
-        print(f"  warning: context-mode patch missing ({patched}), section skipped")
+    dest_root = dest / "patched-node_modules"
+    total = copy_patched(dest_root)
+    if not total:
+        print("  warning: no patched node_modules entry found, section skipped")
         return 0
-    copy_file(patched, dest / "patched-node_modules" / paths.PATCHED_REL)
-    version_file = dest / "patched-node_modules" / "context-mode-version.txt"
+    version_file = dest_root / "context-mode-version.txt"
     version_file.write_text(
         f"context-mode version at backup time: {context_mode_version()}\n",
         encoding="utf-8",
     )
-    return 2
+    return total + 1
 
 
 def _backup_mempalace(dest: Path) -> int:

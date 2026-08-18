@@ -62,6 +62,34 @@ def test_apply_never_touches_auth_json(
     assert not (fresh / ".pi" / "agent" / "auth.json").exists()
 
 
+def test_restore_flags_a_differing_live_file(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A live file whose content differs is named, never silently clobbered."""
+    home, _repo = sandbox
+    assert sync.main() == 0
+    (home / ".pi" / "agent" / "APPEND_SYSTEM.md").write_text("# Changed", encoding="utf-8")
+
+    assert main([]) == 0
+    out = capsys.readouterr().out
+    assert "APPEND_SYSTEM.md" in out
+    assert "DIFFERS from the live file" in out
+
+
+def test_restore_is_idempotent_and_reports_identical(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Re-applying over an already-restored tree rewrites the same bytes."""
+    home, _repo = sandbox
+    assert sync.main() == 0
+    assert main(["--apply", "--patch"]) == 0
+    before = snapshot(home)
+
+    assert main(["--apply", "--patch"]) == 0
+    assert snapshot(home) == before
+    assert "(identical)" in capsys.readouterr().out
+
+
 def test_patch_flag_includes_patched_node_modules(
     sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

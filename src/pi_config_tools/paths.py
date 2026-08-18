@@ -8,8 +8,16 @@ repository containing config/) environment variables.
 import os
 from pathlib import Path
 
-# Relative path (identical on the live side and the repo side) of the patched file in node_modules
-PATCHED_REL = Path("context-mode/build/adapters/pi/extension.js")
+# Relative paths (identical on the live side and the repo side) of the locally patched
+# entries under node_modules. An entry is either a single file or a whole directory:
+# directories are snapshotted entirely, so every local edit inside them is preserved
+# without maintaining a per-file list that would silently rot.
+PATCHED_RELS: tuple[Path, ...] = (
+    Path("context-mode/build/adapters/pi/extension.js"),
+    Path("context-mode/skills"),
+    Path("bigpowers/.pi/skills"),
+    Path("bigpowers/skills"),
+)
 
 
 def home() -> Path:
@@ -40,5 +48,9 @@ def context_mode_pkg() -> Path:
     return pi_agent() / "npm" / "node_modules" / "context-mode" / "package.json"
 
 
-def patched_live() -> Path:
-    return pi_agent() / "npm" / "node_modules" / PATCHED_REL
+def node_modules() -> Path:
+    return pi_agent() / "npm" / "node_modules"
+
+
+def patched_live(rel: Path) -> Path:
+    return node_modules() / rel
