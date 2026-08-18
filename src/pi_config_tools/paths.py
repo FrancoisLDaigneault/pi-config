@@ -17,6 +17,7 @@ PATCHED_RELS: tuple[Path, ...] = (
     Path("context-mode/skills"),
     Path("bigpowers/.pi/skills"),
     Path("bigpowers/skills"),
+    Path("bigpowers/scripts"),
 )
 
 
