@@ -24,5 +24,5 @@ only: prose can be rephrased freely while numbers cannot silently rot.
 Proven at introduction (PR #15): the gate failed on stale test counts in its
 own PR and forced the fix in the same commit; it also forced the CI reports
 change to use `PYTEST_ADDOPTS` env rather than editing the verbatim gate
-line. Platform-side facts (rulesets, CodeQL state) stay outside the gate -
-pytest cannot reach them; `docs/repo-settings.md` is hand-maintained instead.
+line. Facts that live outside the working tree stay outside the gate by
+design: pytest can only check what it can read from the repository.

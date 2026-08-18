@@ -12,8 +12,8 @@ permissions: read-all
 
 jobs:
   analysis:
-    # continuous governance/security posture audit; results feed the README
-    # badge (api.scorecard.dev) and the code-scanning dashboard (SARIF)
+    # continuous security-posture audit; results feed the README badge
+    # (api.scorecard.dev) and the code-scanning dashboard (SARIF)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

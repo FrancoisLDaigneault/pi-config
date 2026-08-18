@@ -104,8 +104,8 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 
 ## Recommended workflow before every Pi update
 
-`main` only accepts pull requests (a repository ruleset rejects direct pushes),
-so config syncs go through a branch:
+`main` only accepts pull requests - direct pushes are rejected - so config
+syncs go through a branch:
 
 ```bash
 uv run scripts/backup.py     # full local safety net (close Pi first for MemPalace)

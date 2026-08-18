@@ -15,8 +15,8 @@ Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
 - `auth.json` is never committed (excluded by `sync.py` and `.gitignore`).
 - English only, everywhere you write. An accent-heuristic gate
   (`tests/unit/test_language.py`) fails the suite on accented characters.
-- `main` is protected: direct pushes are rejected by a repository ruleset.
-  Every change lands through a branch and a pull request.
+- `main` accepts no direct pushes: every change lands through a branch and a
+  pull request.
 
 ## Gates and commands
 
@@ -60,4 +60,5 @@ SPDX SBOM, SHA-256 checksums, provenance attestation).
 - CRLF warnings on Windows are checkout-side only; committed blobs are LF
   (`.gitattributes` enforces `eol=lf`).
 - Repo-local SSH commit signing is configured (`commit.gpgsign true`);
-  commits sign automatically - do not disable or bypass it (ADR-0010).
+  commits sign automatically - do not disable or bypass it. Squash-merge only:
+  a rebase merge would land author commits that GitHub does not re-sign.

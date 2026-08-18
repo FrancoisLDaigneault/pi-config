@@ -8,8 +8,8 @@ made - honestly, without invented committees.
 - **Maintainer** (final say on everything): [@FrancoisLDaigneault](https://github.com/FrancoisLDaigneault).
 - **AI agents** execute day-to-day changes under the maintainer's
   orchestration. Every change that lands on `main` goes through a pull
-  request, the automated gates, and an independent review before merge; the
-  `main-protection` ruleset rejects direct pushes for everyone.
+  request, the automated gates, and an independent review before merge -
+  nobody pushes directly to `main`.
 
 ## Decisions
 
