@@ -16,7 +16,7 @@
   "lastChangelogVersion": "0.84.2",
   "theme": "dark",
   "defaultProvider": "claude-bridge",
-  "defaultModel": "claude-fable-5",
+  "defaultModel": "claude-opus-5",
   "defaultThinkingLevel": "high",
   "subagents": {
     "agentOverrides": {
@@ -30,11 +30,27 @@
       },
       "reviewer": {
         "model": "claude-bridge/claude-fable-5",
-        "thinking": "high"
+        "thinking": "high",
+        "fallbackModels": [
+          "claude-bridge/claude-opus-5"
+        ]
       },
       "oracle": {
         "model": "claude-bridge/claude-fable-5",
-        "thinking": "high"
+        "thinking": "high",
+        "fallbackModels": [
+          "claude-bridge/claude-opus-5"
+        ]
+      },
+      "worker": {
+        "fallbackModels": [
+          "claude-bridge/claude-opus-5"
+        ]
+      },
+      "delegate": {
+        "fallbackModels": [
+          "claude-bridge/claude-opus-5"
+        ]
       }
     }
   }
