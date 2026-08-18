@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/fld-forge/pi-config/compare/v0.5.0...v0.5.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* enforce MCP tool exclusions and sync models ([fa44967](https://github.com/fld-forge/pi-config/commit/fa4496732c3e3381c2a766c1aaa4237583a43b66))
+
 ## [0.5.0](https://github.com/fld-forge/pi-config/compare/v0.4.7...v0.5.0) (2026-08-18)
 
 
