@@ -27,6 +27,10 @@ commit must carry a verified signature. Enabling it before key registration
 blocks all worker PRs (empirically proven, see ADR-0010 and the
 commit-signing section below).
 
+Recreation (all four rules - `required_signatures` included, matching the
+live state; it only works once the signing key is registered, see the
+commit-signing section below):
+
 ```bash
 gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
 {"name": "main-protection", "target": "branch", "enforcement": "active",
@@ -35,7 +39,8 @@ gh api repos/FrancoisLDaigneault/pi-config/rulesets -X POST --input - <<'EOF'
     "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false,
     "require_code_owner_review": false, "require_last_push_approval": false,
     "required_review_thread_resolution": false}},
-   {"type": "non_fast_forward"}, {"type": "deletion"}],
+   {"type": "non_fast_forward"}, {"type": "deletion"},
+   {"type": "required_signatures"}],
  "bypass_actors": []}
 EOF
 ```
