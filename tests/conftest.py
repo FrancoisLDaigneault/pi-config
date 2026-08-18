@@ -55,11 +55,16 @@ def build_fake_home(home: Path) -> Path:
         / "extension.js",
         "// patched",
     )
-    # Directory entry of PATCHED_RELS: snapshotted whole (the bigpowers entries stay
-    # absent on purpose, so the missing-entry branch is exercised too).
+    # Directory entry of PATCHED_RELS: snapshotted whole (the bigpowers skills entries
+    # stay absent on purpose, so the missing-entry branch is exercised too).
     touch(
         agent / "npm" / "node_modules" / "context-mode" / "skills" / "ctx-stats" / "SKILL.md",
         "# Stats",
+    )
+    # Vendor helper scripts carry local fixes too: the whole tree is an entry.
+    touch(
+        agent / "npm" / "node_modules" / "bigpowers" / "scripts" / "lib" / "doc-fetch-cache.sh",
+        "#!/usr/bin/env bash\n",
     )
     skills = home / ".agents" / "skills"
     touch(skills / "scaffold" / "SKILL.md", "# Scaffold")

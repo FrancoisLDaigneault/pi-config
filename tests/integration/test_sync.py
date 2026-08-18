@@ -52,15 +52,32 @@ def test_sync_copies_a_patched_directory_whole(sandbox: tuple[Path, Path]) -> No
     assert "bigpowers/skills" in readme
 
 
+def test_sync_copies_patched_vendor_scripts(sandbox: tuple[Path, Path]) -> None:
+    """Vendor helper scripts are snapshotted: a local fix there survives a reinstall."""
+    _home, repo = sandbox
+    assert main() == 0
+    helper = (
+        repo
+        / "config"
+        / "patched-node_modules"
+        / "bigpowers"
+        / "scripts"
+        / "lib"
+        / "doc-fetch-cache.sh"
+    )
+    assert helper.read_text(encoding="utf-8") == "#!/usr/bin/env bash\n"
+
+
 def test_sync_reports_missing_patched_entry(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """The bigpowers entries are absent from the sandbox: reported, never silent."""
+    """The bigpowers skills entries are absent from the sandbox: reported, never silent."""
     _home, repo = sandbox
     assert main() == 0
     out = capsys.readouterr().out
     assert "bigpowers/.pi/skills missing from node_modules, skipped" in out
-    assert not (repo / "config" / "patched-node_modules" / "bigpowers").exists()
+    assert "bigpowers/skills missing from node_modules, skipped" in out
+    assert not (repo / "config" / "patched-node_modules" / "bigpowers" / "skills").exists()
 
 
 def test_sync_redacts_secrets(sandbox: tuple[Path, Path]) -> None:
