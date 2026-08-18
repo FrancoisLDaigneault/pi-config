@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.7](https://github.com/fld-forge/pi-config/compare/v0.4.6...v0.4.7) (2026-08-18)
+
+
+### Documentation
+
+* point references at the new organization ([#30](https://github.com/fld-forge/pi-config/issues/30)) ([5060446](https://github.com/fld-forge/pi-config/commit/5060446686821a1d1d47a9e391f69a3f3fc8e9b8))
+
 ## [0.4.6](https://github.com/fld-forge/pi-config/compare/v0.4.5...v0.4.6) (2026-08-18)
 
 
