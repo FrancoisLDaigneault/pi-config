@@ -7,6 +7,10 @@ commands below.
 > Maintained by hand. The documentation drift gate (`tests/unit/test_docs.py`)
 > cannot verify this file: platform state is not reachable from pytest.
 > Last verified: 2026-08-17.
+>
+> Machine-readable since 2026-08-18: `governance/baseline.json` captures these
+> controls as desired state; `governance/audit.sh FrancoisLDaigneault/pi-config`
+> verifies the live settings against it (see `governance/README.md`).
 
 ## Branch ruleset: main-protection (id 20945568)
 
