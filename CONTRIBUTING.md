@@ -31,7 +31,8 @@ uv run pytest -q
 ```
 
 The full pytest run enforces a 90% branch-coverage floor; subset runs
-(e.g. `uv run pytest tests/unit`) need `--no-cov`. CI additionally installs
+(e.g. `uv run pytest tests/unit`) need `--no-cov`. Major new functionality
+must include automated tests that cover its behavior. CI additionally installs
 with `uv sync --locked` to prove the lockfile is reproducible.
 
 ## Standards enforced by tooling
