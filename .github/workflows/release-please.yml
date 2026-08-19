@@ -53,7 +53,15 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
       - run: uv build
+      - name: Export CycloneDX SBOM from uv.lock
+        # uv-native SBOM, faithful to the exact locked resolution; complements
+        # the dependency-graph SPDX export below. The cyclonedx1.5 format is
+        # still marked preview by uv, which is why the uv binary is pinned
+        # (setup-uv "version:" above must match the version this was tested on).
+        run: uv export --frozen --format cyclonedx1.5 --output-file dist/sbom.cdx.json
       - name: Export SPDX SBOM from the dependency graph
         run: gh api "repos/$REPO/dependency-graph/sbom" --jq .sbom > dist/sbom.spdx.json
         env:

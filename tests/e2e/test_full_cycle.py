@@ -14,7 +14,9 @@ def run_script(
     name: str, args: list[str], home: Path, repo: Path
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ | {"PI_CONFIG_HOME": str(home), "PI_CONFIG_REPO": str(repo)}
-    return subprocess.run(
+    # S603: list form without a shell, running sys.executable on a script
+    # from this repo with test-controlled args - no untrusted input involved.
+    return subprocess.run(  # noqa: S603
         [sys.executable, str(SCRIPTS / name), *args],
         env=env,
         capture_output=True,

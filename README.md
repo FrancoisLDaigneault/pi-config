@@ -1,15 +1,16 @@
 # pi-config
 
-[![CI](https://github.com/fld-forge/pi-config/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fld-forge/pi-config/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/fld-forge/pi-config/ci.yml?branch=main&logo=githubactions&logoColor=white&label=CI)](https://github.com/fld-forge/pi-config/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/fld-forge/pi-config/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/fld-forge/pi-config/security/code-scanning)
-[![Release](https://img.shields.io/github/v/release/fld-forge/pi-config)](https://github.com/fld-forge/pi-config/releases)
-[![License](https://img.shields.io/github/license/fld-forge/pi-config)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![mypy](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/fld-forge/pi-config/badge)](https://scorecard.dev/viewer/?uri=github.com/fld-forge/pi-config)
+[![Release](https://img.shields.io/github/v/release/fld-forge/pi-config?logo=github)](https://github.com/fld-forge/pi-config/releases)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-strict-blue?logo=python&logoColor=white)](pyproject.toml)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
+[![License](https://img.shields.io/github/license/fld-forge/pi-config)](LICENSE)
 
 Official repository for the Pi configuration (Maestro persona, extensions, prompts, skills, settings). Goal: never lose the configuration, even after a Pi update or a machine reinstall.
 
@@ -22,8 +23,8 @@ Official repository for the Pi configuration (Maestro persona, extensions, promp
 
 ```bash
 cd pi-config
-uv sync                            # creates .venv/, installs the pi_config_tools package (editable) and the dev tools
-git config core.hooksPath hooks   # enables the versioned pre-commit hook (redo after every clone)
+uv sync --locked                           # creates .venv/, installs the pi_config_tools package (editable) and the dev tools
+uv run pre-commit install --install-hooks  # installs the framework hooks (redo after every clone)
 ```
 
 ### Task runner (optional)
@@ -66,14 +67,17 @@ commands documented here stay unchanged.
 
 These standards are **enforced automatically** at two levels:
 
-- **Pre-commit hook** (`hooks/pre-commit`, versioned): `uv run ruff check .`,
-  `uv run ruff format --check .`, `uv run mypy` and `uv run pytest -q` (the
-  whole suite, with its 90% branch-coverage floor) before every commit.
-  Enable with: `git config core.hooksPath hooks`.
+- **Pre-commit hooks** ([pre-commit framework](https://pre-commit.com),
+  `.pre-commit-config.yaml`): hygiene checks, ruff autofix and lockfile
+  consistency on the changed files, plus `uv run ruff check .`,
+  `uv run ruff format --check .`, `uv run mypy`, `uv run deptry src` (keeps
+  the stdlib-only invariant honest) and `uv run pytest -q` (the whole suite,
+  with its 90% branch-coverage floor) before every commit. Replay everything
+  with `uv run pre-commit run --all-files`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
-  `windows-latest` runs `uv sync --locked` then the same four commands as the
-  hook; separate Linux jobs run a full-history secret scan (gitleaks), a
+  `windows-latest` runs `uv sync --locked` then the same five commands as the
+  hooks; separate Linux jobs run a full-history secret scan (gitleaks), a
   dependency audit (pip-audit) and a workflow audit (zizmor).
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
@@ -112,7 +116,7 @@ uv run scripts/backup.py     # full local safety net (close Pi first for MemPala
 uv run scripts/sync.py       # updates config/ in the repo
 git switch -c chore/sync-config
 git add -A
-git commit -m "chore: sync Pi config before update"   # the hook runs the quality gates
+git commit -m "chore: sync Pi config before update"   # the pre-commit hooks run the quality gates
 git push -u origin chore/sync-config
 gh pr create --fill          # squash-merge once the checks are green
 ```
@@ -129,7 +133,7 @@ If `sync.py` fails midway (unreadable JSON, permission denied), `config/` may be
 Order matters: the context-mode patch must be copied back **after** the npm install, otherwise the install overwrites it (that is why `restore.py` only restores it with the explicit `--patch` flag).
 
 1. **Install Pi** (and `uv`) on the new machine.
-2. **Clone this repo**: `git clone <url> pi-config && cd pi-config && uv sync`, then `git config core.hooksPath hooks` (re-enables the pre-commit hook).
+2. **Clone this repo**: `git clone <url> pi-config && cd pi-config && uv sync --locked`, then `uv run pre-commit install --install-hooks` (re-enables the pre-commit hooks).
 3. **Restore the Pi config** (without the patch): `uv run scripts/restore.py` to check in simulation, then `uv run scripts/restore.py --apply`. This puts back `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`) and `~/.agents/skills`.
 4. **Reinstall Pi's npm packages**: `cd ~/.pi/agent/npm && npm ci` (the lockfile restored in step 3 guarantees exact versions).
 5. **Reapply the context-mode patch** - now that `node_modules` exists: `uv run scripts/restore.py --apply --patch` (from the repo).
@@ -151,6 +155,7 @@ Both are covered by `backup.py` **locally only**. Never upload a `pi-backups/` f
 ## Release integrity
 
 Each [release](https://github.com/fld-forge/pi-config/releases) ships
-the wheel, the sdist, an SPDX SBOM, SHA-256 checksums and GitHub
+the wheel, the sdist, a CycloneDX SBOM exported from `uv.lock`, an SPDX
+SBOM from the dependency graph, SHA-256 checksums and GitHub
 build-provenance attestations. See [SECURITY.md](SECURITY.md) for the
 verification commands.
