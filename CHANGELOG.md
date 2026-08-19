@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/fld-forge/pi-config/compare/v0.6.0...v0.6.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* stop attesting the dist/.gitignore that uv build creates ([#44](https://github.com/fld-forge/pi-config/issues/44)) ([754ed83](https://github.com/fld-forge/pi-config/commit/754ed83f2803188611aa45c156343cc2c0493364))
+
 ## [0.6.0](https://github.com/fld-forge/pi-config/compare/v0.5.2...v0.6.0) (2026-08-19)
 
 
