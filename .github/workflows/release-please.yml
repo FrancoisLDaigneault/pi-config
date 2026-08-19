@@ -56,6 +56,12 @@ jobs:
         with:
           version: "0.11.19"
       - run: uv build
+      - name: Remove the dist/.gitignore that uv build creates
+        # uv build drops a .gitignore into dist/; "subject-path: dist/*" below
+        # would attest it as a stray subject next to the real artifacts
+        # (observed on v0.5.2 and v0.6.0), so delete it before the SBOM,
+        # checksum and attestation steps run.
+        run: rm -f dist/.gitignore
       - name: Export CycloneDX SBOM from uv.lock
         # uv-native SBOM, faithful to the exact locked resolution; complements
         # the dependency-graph SPDX export below. The cyclonedx1.5 format is
