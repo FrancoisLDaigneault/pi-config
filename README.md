@@ -53,7 +53,7 @@ commands documented here stay unchanged.
 
 ## Quality standards (enforced by tooling)
 
-- `ruff` (rules E/F/W/I/PL/C90, line 100): cyclomatic complexity **max 8**,
+- `ruff` (rules E/F/W/I/PL/C90/S, line 100): cyclomatic complexity **max 8**,
   **max 30 statements** and **max 5 arguments** per function - `uv run ruff check .`
   must pass with zero violations.
 - `tests/unit/test_standards.py` fails the suite if a module in `src/` exceeds
@@ -68,17 +68,20 @@ commands documented here stay unchanged.
 These standards are **enforced automatically** at two levels:
 
 - **Pre-commit hooks** ([pre-commit framework](https://pre-commit.com),
-  `.pre-commit-config.yaml`): hygiene checks, ruff autofix and lockfile
-  consistency on the changed files, plus `uv run ruff check .`,
-  `uv run ruff format --check .`, `uv run mypy`, `uv run deptry src` (keeps
-  the stdlib-only invariant honest) and `uv run pytest -q` (the whole suite,
-  with its 90% branch-coverage floor) before every commit. Replay everything
-  with `uv run pre-commit run --all-files`.
+  `.pre-commit-config.yaml`): on the changed files, hygiene checks plus ruff
+  lint and format through its mirror hooks (with autofix) and lockfile
+  consistency; whole-project local hooks then run `uv run mypy`,
+  `uv run deptry src` (keeps the stdlib-only invariant honest) and
+  `uv run pytest -q` (the whole suite, with its 90% branch-coverage floor)
+  before every commit. Replay everything with
+  `uv run pre-commit run --all-files`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
-  `windows-latest` runs `uv sync --locked` then the same five commands as the
-  hooks; separate Linux jobs run a full-history secret scan (gitleaks), a
-  dependency audit (pip-audit) and a workflow audit (zizmor).
+  `windows-latest` runs `uv sync --locked` then the five full-project gate
+  commands (`uv run ruff check .`, `uv run ruff format --check .`,
+  `uv run mypy`, `uv run deptry src`, `uv run pytest -q`); separate Linux jobs
+  run a full-history secret scan (gitleaks), a dependency audit (pip-audit)
+  and a workflow audit (zizmor).
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
 

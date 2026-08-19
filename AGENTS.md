@@ -24,8 +24,9 @@ Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
 Setup: `uv sync --locked` then `uv run pre-commit install --install-hooks`
 (both via `just setup`). Python 3.12+.
 
-The five quality commands (also available as `just check`; the pre-commit
-hooks and the CI quality job run exactly these):
+The five quality commands (also available as `just check`; the CI quality
+job runs exactly these; pre-commit runs mypy/deptry/pytest as whole-project
+local hooks and ruff through its changed-files mirror hooks with autofix):
 
 ```bash
 uv run ruff check .
