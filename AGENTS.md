@@ -5,8 +5,9 @@ the live config (`~/.pi/agent`, skills, context-mode patch) into `config/`,
 restores it on a fresh machine, and makes full local backups.
 
 Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
-`scripts/` (thin wrappers), `tests/` (unit / integration / e2e), `hooks/`
-(versioned pre-commit hook), `config/` (the synced snapshot).
+`scripts/` (thin wrappers), `tests/` (unit / integration / e2e), `config/`
+(the synced snapshot); local gates run through the pre-commit framework
+(`.pre-commit-config.yaml`).
 
 ## Hard rules
 
@@ -20,15 +21,17 @@ Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
 
 ## Gates and commands
 
-Setup: `uv sync` then `git config core.hooksPath hooks`. Python 3.12+.
+Setup: `uv sync --locked` then `uv run pre-commit install --install-hooks`
+(both via `just setup`). Python 3.12+.
 
-The four quality commands (also available as `just check`; the pre-commit hook
-and the CI quality job run exactly these):
+The five quality commands (also available as `just check`; the pre-commit
+hooks and the CI quality job run exactly these):
 
 ```bash
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
+uv run deptry src
 uv run pytest -q
 ```
 
@@ -48,7 +51,7 @@ section - proven on PR #14), a breaking change bumps the major; `ci:`,
 `chore:`, `refactor:` and `test:` do not release by themselves. The release
 PR carries `pyproject.toml`, `uv.lock`, `CHANGELOG.md` and the manifest;
 merging it creates the tag and fires the release-assets job (wheel, sdist,
-SPDX SBOM, SHA-256 checksums, provenance attestation).
+CycloneDX + SPDX SBOMs, SHA-256 checksums, provenance attestation).
 
 ## Known quirks
 

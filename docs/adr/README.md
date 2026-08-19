@@ -15,6 +15,7 @@ themselves.
 | [0007](0007-duplication-kept-over-abstraction.md) | Duplication kept over abstraction in the command modules | accepted |
 | [0008](0008-documentation-drift-gate.md) | Documentation drift gate | accepted |
 | [0009](0009-draft-then-publish-release-flow.md) | Draft-then-publish release flow | accepted |
+| [0010](0010-pre-commit-framework-migration.md) | pre-commit framework replaces the versioned shell hook | accepted |
 
 Conventions: MADR-lite, numbered, immutable once accepted (supersede with a
 new ADR instead of editing history). New significant decisions get the next

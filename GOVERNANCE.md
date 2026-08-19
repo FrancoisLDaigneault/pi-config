@@ -22,5 +22,6 @@ ADRs are superseded by new ones, not rewritten.
 - Contribution path and quality gates: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - Releases are automated: release-please opens a release PR from the
   Conventional Commits on `main`; merging it publishes the tag, changelog and
-  signed release assets.
+  release assets with SHA-256 checksums and a signed SLSA build-provenance
+  attestation (OIDC), verifiable as described in `SECURITY.md`.
 - Security reports: [`SECURITY.md`](SECURITY.md).
