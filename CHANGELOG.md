@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/fld-forge/pi-config/compare/v0.5.1...v0.5.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* enforce MCP direct-tool isolation and harden restore ([d5c342f](https://github.com/fld-forge/pi-config/commit/d5c342fd952b755720634ac1edaa52d849e0dfa0))
+* protect all live configuration on restore ([2d6465c](https://github.com/fld-forge/pi-config/commit/2d6465c404664c54c141760076f0df12db8400fa))
+
 ## [0.5.1](https://github.com/fld-forge/pi-config/compare/v0.5.0...v0.5.1) (2026-08-18)
 
 
