@@ -65,3 +65,21 @@ def test_context_mode_version_unreadable(tmp_path: Path, monkeypatch: pytest.Mon
     pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
     _touch(pkg, "{not json}")
     assert context_mode_version() == "unknown (package.json unreadable)"
+
+
+def test_context_mode_version_rejects_non_object(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
+    _touch(pkg, "[]")
+    assert context_mode_version() == "unknown (package.json unreadable)"
+
+
+def test_context_mode_version_rejects_non_string(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("PI_CONFIG_HOME", str(tmp_path))
+    pkg = tmp_path / ".pi" / "agent" / "npm" / "node_modules" / "context-mode" / "package.json"
+    _touch(pkg, '{"version": 1}')
+    assert context_mode_version() == "unknown (package.json unreadable)"
