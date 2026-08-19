@@ -3,7 +3,7 @@
 Usage: uv run scripts/restore.py                    (simulation, nothing is written)
        uv run scripts/restore.py --apply            (real execution)
        uv run scripts/restore.py --apply --patch    (includes the context-mode patch)
-       uv run scripts/restore.py --apply --force    (overwrites a differing live mcp.json)
+       uv run scripts/restore.py --apply --force    (overwrites differing live configuration)
 
 NEVER touches auth.json.
 The context-mode patch (patched-node_modules/) is only restored with --patch,
@@ -65,9 +65,9 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool, force: bool) -> t
             continue
         dst = dst_root / rel
         note = _overwrite_note(src, dst)
-        protects_mcp = src_root.name == "pi-agent" and rel == Path("mcp.json")
-        if apply and protects_mcp and "DIFFERS" in note and not force:
-            print(f"  REFUSED: {rel} differs from live; use --force to overwrite")
+        protects_live_config = src_root.name == "pi-agent"
+        if apply and protects_live_config and "DIFFERS" in note and not force:
+            print(f"  REFUSED: {rel.as_posix()} differs from live; use --force to overwrite")
             refused += 1
             continue
         print(f"  {'copying' if apply else 'would copy'}: {rel}  ->  {dst}{note}")
@@ -88,7 +88,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="include the context-mode patch (run AFTER the npm install)",
     )
-    parser.add_argument("--force", action="store_true", help="overwrite a differing live mcp.json")
+    parser.add_argument(
+        "--force", action="store_true", help="overwrite differing live configuration"
+    )
     return parser.parse_args(argv)
 
 
