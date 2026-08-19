@@ -10,7 +10,11 @@ from pi_config_tools.sync import main
 
 
 def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
-    _home, repo = sandbox
+    home, repo = sandbox
+    live_mcp = home / ".pi" / "agent" / "mcp.json"
+    mcp_payload = b'{"servers":{"sandbox":{"command":"distinctive-sync-marker"}}}\n'
+    live_mcp.write_bytes(mcp_payload)
+
     assert main() == 0
     config = repo / "config"
 
@@ -22,6 +26,7 @@ def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     assert (config / "pi-agent" / "packages" / "parity" / "index.js").is_file()
     assert (config / "pi-agent" / "npm" / "package.json").is_file()
     assert (config / "pi-agent" / "npm" / "package-lock.json").is_file()
+    assert (config / "pi-agent" / "mcp.json").read_bytes() == mcp_payload
     assert (config / "agents-skills" / "scaffold" / "SKILL.md").is_file()
 
     # context-mode patch + generated README with the version
@@ -56,16 +61,13 @@ def test_sync_copies_patched_vendor_scripts(sandbox: tuple[Path, Path]) -> None:
     """Vendor helper scripts are snapshotted: a local fix there survives a reinstall."""
     _home, repo = sandbox
     assert main() == 0
-    helper = (
-        repo
-        / "config"
-        / "patched-node_modules"
-        / "bigpowers"
-        / "scripts"
-        / "lib"
-        / "doc-fetch-cache.sh"
-    )
+    patched = repo / "config" / "patched-node_modules"
+    helper = patched / "bigpowers" / "scripts" / "lib" / "doc-fetch-cache.sh"
     assert helper.read_text(encoding="utf-8") == "#!/usr/bin/env bash\n"
+    allowlist = (
+        patched / "pi-subagents" / "src" / "runs" / "shared" / "mcp-direct-tool-allowlist.ts"
+    )
+    assert allowlist.read_text(encoding="utf-8") == "// patched direct tool allowlist\n"
 
 
 def test_sync_reports_missing_patched_entry(

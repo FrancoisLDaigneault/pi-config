@@ -3,6 +3,7 @@
 Usage: uv run scripts/restore.py                    (simulation, nothing is written)
        uv run scripts/restore.py --apply            (real execution)
        uv run scripts/restore.py --apply --patch    (includes the context-mode patch)
+       uv run scripts/restore.py --apply --force    (overwrites a differing live mcp.json)
 
 NEVER touches auth.json.
 The context-mode patch (patched-node_modules/) is only restored with --patch,
@@ -52,8 +53,9 @@ def _overwrite_note(src: Path, dst: Path) -> str:
     return "  (DIFFERS from the live file - overwriting)"
 
 
-def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
+def _restore_tree(src_root: Path, dst_root: Path, apply: bool, force: bool) -> tuple[int, int]:
     count = 0
+    refused = 0
     for src in list_files(src_root):
         rel = src.relative_to(src_root)
         if src.name == "auth.json":
@@ -63,11 +65,16 @@ def _restore_tree(src_root: Path, dst_root: Path, apply: bool) -> int:
             continue
         dst = dst_root / rel
         note = _overwrite_note(src, dst)
+        protects_mcp = src_root.name == "pi-agent" and rel == Path("mcp.json")
+        if apply and protects_mcp and "DIFFERS" in note and not force:
+            print(f"  REFUSED: {rel} differs from live; use --force to overwrite")
+            refused += 1
+            continue
         print(f"  {'copying' if apply else 'would copy'}: {rel}  ->  {dst}{note}")
         if apply:
             copy_file(src, dst)
         count += 1
-    return count
+    return count, refused
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -81,6 +88,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="include the context-mode patch (run AFTER the npm install)",
     )
+    parser.add_argument("--force", action="store_true", help="overwrite a differing live mcp.json")
     return parser.parse_args(argv)
 
 
@@ -96,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Restore - {mode} mode\n")
 
     count = 0
+    refused = 0
     for src_root, dst_root in _mappings():
         if src_root.name == "patched-node_modules" and not args.patch:
             print(
@@ -106,10 +115,15 @@ def main(argv: list[str] | None = None) -> int:
         if not src_root.is_dir():
             print(f"  info: {src_root.name}/ missing from the repo, skipped")
             continue
-        count += _restore_tree(src_root, dst_root, apply)
+        copied, blocked = _restore_tree(src_root, dst_root, apply, args.force)
+        count += copied
+        refused += blocked
 
     verb = "file(s) copied" if apply else "file(s) would be copied"
     print(f"\nDone: {count} {verb}.")
+    if refused:
+        print(f"error: {refused} protected file(s) differed; rerun with --force to overwrite")
+        return 1
     return 0
 
 

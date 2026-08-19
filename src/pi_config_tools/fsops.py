@@ -78,7 +78,10 @@ def context_mode_version() -> str:
     if not pkg.exists():
         return "unknown (package.json missing)"
     try:
-        version: str = json.loads(pkg.read_text(encoding="utf-8")).get("version", "unknown")
-        return version
+        data = json.loads(pkg.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return "unknown (package.json unreadable)"
+    if not isinstance(data, dict):
+        return "unknown (package.json unreadable)"
+    version = data.get("version", "unknown")
+    return version if isinstance(version, str) else "unknown (package.json unreadable)"
