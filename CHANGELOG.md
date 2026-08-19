@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/fld-forge/pi-config/compare/v0.5.2...v0.6.0) (2026-08-19)
+
+
+### Features
+
+* pre-commit framework, deptry gate, CycloneDX SBOM and tooling hardening ([#42](https://github.com/fld-forge/pi-config/issues/42)) ([c1893dc](https://github.com/fld-forge/pi-config/commit/c1893dccc02f4912aaac3b7741cce73f4a05af7a))
+
 ## [0.5.2](https://github.com/fld-forge/pi-config/compare/v0.5.1...v0.5.2) (2026-08-19)
 
 
