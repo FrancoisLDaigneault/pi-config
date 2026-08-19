@@ -76,22 +76,37 @@ def test_restore_flags_a_differing_live_file(
     assert "DIFFERS from the live file" in out
 
 
-def test_apply_protects_differing_live_mcp_until_forced(
+def test_apply_protects_differing_live_config_until_forced(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """An existing divergent MCP config requires explicit destructive opt-in."""
+    """Every divergent live configuration file requires destructive opt-in."""
     home, repo = sandbox
+    agent = home / ".pi" / "agent"
+    live_files = {
+        "mcp.json": agent / "mcp.json",
+        "settings.json": agent / "settings.json",
+        "agents/browser.md": agent / "agents" / "browser.md",
+    }
+    live_files["agents/browser.md"].parent.mkdir()
+    live_files["agents/browser.md"].write_bytes(b"snapshot browser\n")
     assert sync.main() == 0
-    live_mcp = home / ".pi" / "agent" / "mcp.json"
-    snapshot_mcp = (repo / "config" / "pi-agent" / "mcp.json").read_bytes()
-    live_mcp.write_bytes(b'{"servers":{"live-only":{}}}\n')
+    snapshot_files = {rel: (repo / "config" / "pi-agent" / rel).read_bytes() for rel in live_files}
+    divergent_files = {
+        "mcp.json": b'{"servers":{"live-only":{}}}\n',
+        "settings.json": b'{"packages":["live-only"]}\n',
+        "agents/browser.md": b"live browser\n",
+    }
+    for rel, content in divergent_files.items():
+        live_files[rel].write_bytes(content)
 
     assert main(["--apply"]) == 1
-    assert live_mcp.read_bytes() == b'{"servers":{"live-only":{}}}\n'
-    assert "REFUSED: mcp.json differs from live; use --force" in capsys.readouterr().out
+    assert {rel: path.read_bytes() for rel, path in live_files.items()} == divergent_files
+    out = capsys.readouterr().out
+    for rel in divergent_files:
+        assert f"REFUSED: {rel} differs from live; use --force" in out
 
     assert main(["--apply", "--force"]) == 0
-    assert live_mcp.read_bytes() == snapshot_mcp
+    assert {rel: path.read_bytes() for rel, path in live_files.items()} == snapshot_files
 
 
 def test_restore_is_idempotent_and_reports_identical(
@@ -100,7 +115,7 @@ def test_restore_is_idempotent_and_reports_identical(
     """Re-applying over an already-restored tree rewrites the same bytes."""
     home, _repo = sandbox
     assert sync.main() == 0
-    assert main(["--apply", "--patch"]) == 0
+    assert main(["--apply", "--patch", "--force"]) == 0
     before = snapshot(home)
 
     assert main(["--apply", "--patch"]) == 0
@@ -108,15 +123,15 @@ def test_restore_is_idempotent_and_reports_identical(
     assert "(identical)" in capsys.readouterr().out
 
 
-def test_patch_flag_includes_patched_node_modules(
+def test_patch_flag_overwrites_differing_vendor_without_force(
     sandbox: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    """Vendor patches remain freely restorable after an upstream install."""
     _home, _repo = sandbox
     assert sync.main() == 0
     fresh = tmp_path / "fresh-home"
     monkeypatch.setenv("PI_CONFIG_HOME", str(fresh))
-
-    assert main(["--apply", "--patch"]) == 0
+    assert main(["--apply"]) == 0
     patched = (
         fresh
         / ".pi"
@@ -129,6 +144,10 @@ def test_patch_flag_includes_patched_node_modules(
         / "pi"
         / "extension.js"
     )
+    patched.parent.mkdir(parents=True)
+    patched.write_text("// upstream replacement", encoding="utf-8")
+
+    assert main(["--apply", "--patch"]) == 0
     assert patched.read_text(encoding="utf-8") == "// patched"
     # The patched-node_modules README is repo documentation: never restored
     assert not (fresh / ".pi" / "agent" / "npm" / "node_modules" / "README.md").exists()
