@@ -4,6 +4,10 @@
 # mypy, pytest and deptry run as local system hooks so they use the project
 # venv (the isolated mypy mirror cannot see our dependencies and drifts
 # from CI - see ADR-0010).
+# config/ is a byte-faithful live-machine snapshot, excluded from every
+# quality gate (AGENTS.md hard rule): never check or touch it.
+exclude: ^config/
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -12,10 +16,7 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: end-of-file-fixer
-        # config/ is a byte-faithful live-machine snapshot: never touch it
-        exclude: ^config/
       - id: trailing-whitespace
-        exclude: ^config/
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # rev matches the ruff version in uv.lock
@@ -33,18 +34,23 @@ repos:
 
   - repo: local
     hooks:
+      # always_run: without it pre-commit skips these whole-project gates
+      # on commits whose staged files match no filter (e.g. pure deletions).
       - id: mypy
         name: mypy (project venv)
         entry: uv run mypy
         language: system
         pass_filenames: false
+        always_run: true
       - id: deptry
         name: deptry (stdlib-only invariant)
         entry: uv run deptry src
         language: system
         pass_filenames: false
+        always_run: true
       - id: pytest
         name: pytest (full suite, coverage floor)
         entry: uv run pytest -q
         language: system
         pass_filenames: false
+        always_run: true

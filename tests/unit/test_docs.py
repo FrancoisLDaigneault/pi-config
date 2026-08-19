@@ -74,6 +74,17 @@ def test_gate_commands_documented() -> None:
     assert not missing, f"ci.yml quality job: hook commands missing: {missing}"
 
 
+def test_gate_commands_in_precommit_hooks() -> None:
+    """Ruff runs through its pinned mirror hooks; the venv-bound gate
+    commands must stay wired as local-hook entries, or a deleted hook
+    would silently drop a local gate."""
+    commands = [cmd for cmd in _gate_commands() if not cmd.startswith("uv run ruff")]
+    assert commands, "justfile check recipe: no venv-bound 'uv run ...' command found"
+    config = _text(".pre-commit-config.yaml")
+    missing = [cmd for cmd in commands if f"entry: {cmd}" not in config]
+    assert not missing, f".pre-commit-config.yaml: local-hook entries missing: {missing}"
+
+
 def test_size_caps_documented() -> None:
     module_cap = test_standards.MAX_MODULE_LINES
     script_cap = test_standards.MAX_SCRIPT_LINES

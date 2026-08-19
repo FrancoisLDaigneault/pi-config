@@ -17,7 +17,7 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Test suite duration | 2.8 s (52 tests) | < 5 s | `uv run pytest -q` (CI gate) |
+| Test suite duration | 2.8 s (53 tests) | < 5 s | `uv run pytest -q` (CI gate) |
 
 Measurement cadence: CI runs on every push/PR to `main` and every Monday at
 06:00 UTC - the weekly run catches bit-rot without anyone pushing.
@@ -44,15 +44,15 @@ North Star KPI:
 
 | KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Branch coverage | 94.05% | >= 90% (enforced floor) | every full `uv run pytest` run (hook + CI + `just check`) |
+| Branch coverage | 94.05% | >= 90% (enforced floor) | every full `uv run pytest` run (pre-commit framework + CI + `just check`) |
 
 Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit hook + CI) |
+| Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit framework + CI) |
 | src module / script size | max 140 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
-| Green tests | 52 (31 unit / 19 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (hook + CI) |
+| Green tests | 53 (32 unit / 19 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
 
 ## Scalability
 
