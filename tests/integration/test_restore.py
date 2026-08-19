@@ -76,6 +76,24 @@ def test_restore_flags_a_differing_live_file(
     assert "DIFFERS from the live file" in out
 
 
+def test_apply_protects_differing_live_mcp_until_forced(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An existing divergent MCP config requires explicit destructive opt-in."""
+    home, repo = sandbox
+    assert sync.main() == 0
+    live_mcp = home / ".pi" / "agent" / "mcp.json"
+    snapshot_mcp = (repo / "config" / "pi-agent" / "mcp.json").read_bytes()
+    live_mcp.write_bytes(b'{"servers":{"live-only":{}}}\n')
+
+    assert main(["--apply"]) == 1
+    assert live_mcp.read_bytes() == b'{"servers":{"live-only":{}}}\n'
+    assert "REFUSED: mcp.json differs from live; use --force" in capsys.readouterr().out
+
+    assert main(["--apply", "--force"]) == 0
+    assert live_mcp.read_bytes() == snapshot_mcp
+
+
 def test_restore_is_idempotent_and_reports_identical(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:

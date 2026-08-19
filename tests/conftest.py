@@ -66,6 +66,17 @@ def build_fake_home(home: Path) -> Path:
         agent / "npm" / "node_modules" / "bigpowers" / "scripts" / "lib" / "doc-fetch-cache.sh",
         "#!/usr/bin/env bash\n",
     )
+    touch(
+        agent
+        / "npm"
+        / "node_modules"
+        / "pi-subagents"
+        / "src"
+        / "runs"
+        / "shared"
+        / "mcp-direct-tool-allowlist.ts",
+        "// patched direct tool allowlist\n",
+    )
     skills = home / ".agents" / "skills"
     touch(skills / "scaffold" / "SKILL.md", "# Scaffold")
     touch(skills / "scaffold" / "__pycache__" / "m.pyc", "bin")
