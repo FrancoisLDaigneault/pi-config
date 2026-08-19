@@ -22,6 +22,7 @@ def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     assert (config / "pi-agent" / "packages" / "parity" / "index.js").is_file()
     assert (config / "pi-agent" / "npm" / "package.json").is_file()
     assert (config / "pi-agent" / "npm" / "package-lock.json").is_file()
+    assert (config / "pi-agent" / "mcp.json").is_file()
     assert (config / "agents-skills" / "scaffold" / "SKILL.md").is_file()
 
     # context-mode patch + generated README with the version

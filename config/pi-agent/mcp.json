@@ -7,6 +7,72 @@
     "context7": {
       "url": "https://mcp.context7.com/mcp",
       "protocolVersion": "auto"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.79",
+        "--headless",
+        "--browser=chromium",
+        "--isolated",
+        "--block-service-workers"
+      ],
+      "excludeTools": [
+        "browser_run_code_unsafe"
+      ]
+    },
+    "playwright-firefox": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.79",
+        "--headless",
+        "--browser=firefox",
+        "--isolated",
+        "--block-service-workers"
+      ],
+      "excludeTools": [
+        "browser_run_code_unsafe"
+      ]
+    },
+    "playwright-webkit": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.79",
+        "--headless",
+        "--browser=webkit",
+        "--isolated",
+        "--block-service-workers"
+      ],
+      "excludeTools": [
+        "browser_run_code_unsafe"
+      ]
+    },
+    "playwright-msedge": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.79",
+        "--headless",
+        "--browser=msedge",
+        "--isolated",
+        "--block-service-workers"
+      ],
+      "excludeTools": [
+        "browser_run_code_unsafe"
+      ]
+    },
+    "github": {
+      "command": "C:\\Users\\franc\\.local\\bin\\github-mcp-server.exe",
+      "args": [
+        "stdio",
+        "--toolsets=context,repos,issues,pull_requests,actions",
+        "--read-only",
+        "--oauth-scopes=repo,read:org"
+      ],
+      "lifecycle": "lazy-keep-alive"
     }
   }
 }
