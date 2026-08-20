@@ -37,7 +37,7 @@ Supporting indicators:
 | `auth.json` tracked by git | never | never | `sync.py` exclusion + `.gitignore` + e2e test |
 | Release integrity (SBOM + provenance attestation) | v0.4.0 verified with `gh attestation verify` | every release verified | release assets + attestation check (see `SECURITY.md`) |
 | Semgrep CE findings | 0 at adoption | 0 blocking | `uvx semgrep==1.173.0 scan --config p/python --metrics=off --error src scripts` in CI |
-| Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, `uv audit --locked`, Dependabot, secret scanning) |
+| Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, `uv audit --locked`, pip-audit, Dependency Review, Dependabot, secret scanning) |
 
 ## Maintainability
 
@@ -52,6 +52,7 @@ Supporting indicators:
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
 | Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit framework + CI) |
+| Static type diagnostics | 0 in ty and mypy at adoption | 0 blocking | both checkers in pre-commit, `just check`, and CI `quality` |
 | src module / script size | max 140 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
 | Green tests | 53 (32 unit / 19 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
 
