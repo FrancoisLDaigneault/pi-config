@@ -83,7 +83,9 @@ These standards are **enforced automatically** at two levels:
   `uv run ty check --error-on-warning src scripts tests`, `uv run deptry src`,
   `uv run pytest -q`); separate Linux jobs
   run a full-history secret scan (gitleaks), a locked dependency audit
-  (`uv audit --locked`) and a workflow audit (zizmor).
+  (`uv audit --locked`), a Semgrep CE scan of first-party Python, and a workflow
+  audit (zizmor). Semgrep uses the remote `p/python` pack, whose rules can evolve
+  independently of the pinned CLI version.
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
 
