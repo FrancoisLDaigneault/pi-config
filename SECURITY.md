@@ -17,9 +17,9 @@ You will receive an initial response within 7 business days.
 ## Automated controls
 
 Every PR and every push to `main` (plus a weekly scheduled run) is scanned by
-gitleaks (full git history), pip-audit and zizmor; weekly CodeQL analysis,
-GitHub secret scanning with push protection, and weekly Dependabot updates run
-on top.
+gitleaks (full git history), `uv audit --locked` and zizmor; weekly CodeQL
+analysis, GitHub secret scanning with push protection, and weekly Dependabot
+updates run on top.
 
 ## Verifying release assets
 
