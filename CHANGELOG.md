@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.2](https://github.com/fld-forge/pi-config/compare/v0.6.1...v0.6.2) (2026-08-20)
+
+
+### Documentation
+
+* add OpenSSF Best Practices badge ([#50](https://github.com/fld-forge/pi-config/issues/50)) ([0a008ad](https://github.com/fld-forge/pi-config/commit/0a008ad965c12b3f4edc04d54381e757040f482f))
+* describe the pre-commit gate split accurately and list ruff rule S ([#47](https://github.com/fld-forge/pi-config/issues/47)) ([173db7b](https://github.com/fld-forge/pi-config/commit/173db7b39edd5e542e64376ff6909e0ddf29fc8e))
+* require tests for major functionality ([#49](https://github.com/fld-forge/pi-config/issues/49)) ([acb2d4b](https://github.com/fld-forge/pi-config/commit/acb2d4beb0293cab9c24e9568c1f9745861d6ea8))
+
 ## [0.6.1](https://github.com/fld-forge/pi-config/compare/v0.6.0...v0.6.1) (2026-08-19)
 
 
