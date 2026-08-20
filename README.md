@@ -40,6 +40,7 @@ With [just](https://just.systems) installed (`winget install Casey.Just`), the
 src/pi_config_tools/   # business logic (package installed in editable mode)
   paths.py             # paths, redirectable via PI_CONFIG_HOME / PI_CONFIG_REPO (tests)
   fsops.py             # copy_tree/copy_file with exclusions
+  patched.py           # copy and metadata operations for local node_modules patches
   secrets.py           # detection and redaction of secrets in JSON files
   sync.py, restore.py, backup.py   # one testable main(argv) per command
 scripts/               # thin entry points (import + sys.exit(main()))
@@ -72,21 +73,26 @@ These standards are **enforced automatically** at two levels:
   lint and format through its mirror hooks (with autofix) and lockfile
   consistency; whole-project local hooks then run
   `uv run ty check --error-on-warning src scripts tests`, `uv run mypy`,
-  `uv run deptry src` (keeps the stdlib-only invariant honest) and
-  `uv run pytest -q` (the whole suite, with its 90% branch-coverage floor)
+  `uv run deptry src` (keeps the stdlib-only invariant honest),
+  `uv run lint-imports` (enforces package seams) and `uv run pytest -q`
+  (the whole suite, with its 90% branch-coverage floor)
   before every commit. Replay everything with
   `uv run pre-commit run --all-files`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
-  `windows-latest` runs `uv sync --locked` then the six full-project gate
+  `windows-latest` runs `uv sync --locked` then the seven full-project gate
   commands (`uv run ruff check .`, `uv run ruff format --check .`,
   `uv run ty check --error-on-warning src scripts tests`, `uv run mypy`,
-  `uv run deptry src`, `uv run pytest -q`); separate Linux jobs run a
+  `uv run deptry src`, `uv run lint-imports`, `uv run pytest -q`); separate
+  Linux jobs run a
   full-history secret scan (gitleaks), complementary locked dependency audits
   (`uv audit --locked` and pip-audit), a Semgrep CE scan of first-party Python,
   and a workflow audit (zizmor). Pull requests also run GitHub's Dependency
   Review Action. Semgrep uses the remote `p/python` pack, whose rules can evolve
-  independently of the pinned CLI version.
+  independently of the pinned CLI version. Import Linter keeps `backup`,
+  `restore` and `sync` independent and keeps `secrets` from depending on path,
+  file-operation, patch or command modules. Ruff TID251 separately prevents
+  production modules from importing `tests` or `scripts`.
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
 

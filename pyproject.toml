@@ -18,6 +18,7 @@ packages = ["src/pi_config_tools"]
 dev = [
     "deptry>=0.25.1,<0.26",
     "hypothesis>=6.165.10",
+    "import-linter>=2.13,<3",
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
@@ -32,7 +33,7 @@ line-length = 100
 extend-exclude = ["config"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "PL", "C90", "S", "N", "B", "C4", "SIM", "PERF", "RUF"]
+select = ["E", "F", "W", "I", "PL", "C90", "S", "N", "B", "C4", "SIM", "PERF", "RUF", "TID"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 8
@@ -43,13 +44,43 @@ max-args = 5
 
 [tool.ruff.lint.per-file-ignores]
 # Tests compare literal counts and contents: PLR2004 is noise there.
-# S101: pytest tests assert by design.
-"tests/*" = ["PLR2004", "S101"]
+# S101: pytest tests assert by design. Tests and wrappers are not production modules.
+"scripts/*" = ["TID251"]
+"tests/*" = ["PLR2004", "S101", "TID251"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"scripts".msg = "Production modules must not import command wrappers."
+"tests".msg = "Production modules must not import test code."
 
 [tool.deptry]
 # The runtime package is stdlib-only (dependencies = []); deptry keeps that
 # invariant honest by flagging any non-stdlib import that sneaks into src/.
 extend_exclude = ["config"]
+
+[tool.importlinter]
+root_package = "pi_config_tools"
+
+[[tool.importlinter.contracts]]
+name = "Command modules are independent"
+type = "independence"
+modules = [
+    "pi_config_tools.backup",
+    "pi_config_tools.restore",
+    "pi_config_tools.sync",
+]
+
+[[tool.importlinter.contracts]]
+name = "Secrets remain an isolated policy module"
+type = "forbidden"
+source_modules = ["pi_config_tools.secrets"]
+forbidden_modules = [
+    "pi_config_tools.paths",
+    "pi_config_tools.fsops",
+    "pi_config_tools.patched",
+    "pi_config_tools.backup",
+    "pi_config_tools.restore",
+    "pi_config_tools.sync",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

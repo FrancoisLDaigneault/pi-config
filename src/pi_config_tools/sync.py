@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import context_mode_version, copy_file, copy_patched, copy_tree
+from pi_config_tools.fsops import copy_file, copy_tree
+from pi_config_tools.patched import context_mode_version, copy_patched
 from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
 # Items of .pi/agent to version (folders and files, relative paths)

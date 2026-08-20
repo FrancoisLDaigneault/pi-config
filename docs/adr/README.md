@@ -17,6 +17,7 @@ themselves.
 | [0009](0009-draft-then-publish-release-flow.md) | Draft-then-publish release flow | accepted |
 | [0010](0010-pre-commit-framework-migration.md) | pre-commit framework replaces the versioned shell hook | accepted |
 | [0011](0011-ty-and-mypy-as-complementary-type-gates.md) | ty and mypy as complementary type gates | accepted |
+| [0012](0012-import-boundaries-as-architecture-fitness-gates.md) | Import boundaries as architecture fitness gates | accepted |
 
 Conventions: MADR-lite, numbered, immutable once accepted (supersede with a
 new ADR instead of editing history). New significant decisions get the next

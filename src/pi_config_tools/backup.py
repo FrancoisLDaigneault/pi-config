@@ -12,7 +12,8 @@ from datetime import datetime
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import context_mode_version, copy_patched, copy_tree
+from pi_config_tools.fsops import copy_tree
+from pi_config_tools.patched import context_mode_version, copy_patched
 
 
 def default_destination(now: datetime | None = None) -> Path:
