@@ -36,7 +36,7 @@ Supporting indicators:
 | --- | --- | --- | --- |
 | `auth.json` tracked by git | never | never | `sync.py` exclusion + `.gitignore` + e2e test |
 | Release integrity (SBOM + provenance attestation) | v0.4.0 verified with `gh attestation verify` | every release verified | release assets + attestation check (see `SECURITY.md`) |
-| Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, pip-audit, Dependabot, secret scanning) |
+| Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, `uv audit --locked`, Dependabot, secret scanning) |
 
 ## Maintainability
 
