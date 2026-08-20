@@ -36,6 +36,7 @@ Supporting indicators:
 | --- | --- | --- | --- |
 | `auth.json` tracked by git | never | never | `sync.py` exclusion + `.gitignore` + e2e test |
 | Release integrity (SBOM + provenance attestation) | v0.4.0 verified with `gh attestation verify` | every release verified | release assets + attestation check (see `SECURITY.md`) |
+| Semgrep CE findings | 0 at adoption | 0 blocking | `uvx semgrep==1.173.0 scan --config p/python --metrics=off --error src scripts` in CI |
 | Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, `uv audit --locked`, Dependabot, secret scanning) |
 
 ## Maintainability
