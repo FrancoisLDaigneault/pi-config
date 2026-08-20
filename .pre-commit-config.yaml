@@ -1,7 +1,7 @@
 # Pre-commit framework configuration (https://pre-commit.com).
 # Enable with: uv run pre-commit install --install-hooks (done by `just setup`).
 # Mirror hooks are pinned to tags matching the versions locked in uv.lock;
-# ty, mypy, pytest and deptry run as local system hooks so they use the
+# ty, mypy, deptry, Import Linter and pytest run as local system hooks so they use the
 # project venv and stay aligned with CI (see ADR-0010 and ADR-0011).
 # config/ is a byte-faithful live-machine snapshot, excluded from every
 # quality gate (AGENTS.md hard rule): never check or touch it.
@@ -50,6 +50,12 @@ repos:
       - id: deptry
         name: deptry (stdlib-only invariant)
         entry: uv run deptry src
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: import-linter
+        name: Import Linter (architecture contracts)
+        entry: uv run lint-imports
         language: system
         pass_filenames: false
         always_run: true
