@@ -71,20 +71,21 @@ These standards are **enforced automatically** at two levels:
   `.pre-commit-config.yaml`): on the changed files, hygiene checks plus ruff
   lint and format through its mirror hooks (with autofix) and lockfile
   consistency; whole-project local hooks then run
-  `uv run ty check --error-on-warning src scripts tests`,
+  `uv run ty check --error-on-warning src scripts tests`, `uv run mypy`,
   `uv run deptry src` (keeps the stdlib-only invariant honest) and
   `uv run pytest -q` (the whole suite, with its 90% branch-coverage floor)
   before every commit. Replay everything with
   `uv run pre-commit run --all-files`.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
-  `windows-latest` runs `uv sync --locked` then the five full-project gate
+  `windows-latest` runs `uv sync --locked` then the six full-project gate
   commands (`uv run ruff check .`, `uv run ruff format --check .`,
-  `uv run ty check --error-on-warning src scripts tests`, `uv run deptry src`,
-  `uv run pytest -q`); separate Linux jobs
-  run a full-history secret scan (gitleaks), a locked dependency audit
-  (`uv audit --locked`), a Semgrep CE scan of first-party Python, and a workflow
-  audit (zizmor). Semgrep uses the remote `p/python` pack, whose rules can evolve
+  `uv run ty check --error-on-warning src scripts tests`, `uv run mypy`,
+  `uv run deptry src`, `uv run pytest -q`); separate Linux jobs run a
+  full-history secret scan (gitleaks), complementary locked dependency audits
+  (`uv audit --locked` and pip-audit), a Semgrep CE scan of first-party Python,
+  and a workflow audit (zizmor). Pull requests also run GitHub's Dependency
+  Review Action. Semgrep uses the remote `p/python` pack, whose rules can evolve
   independently of the pinned CLI version.
 
 The project KPIs (with current values and targets) live in [`NORTHSTAR.md`](NORTHSTAR.md).
