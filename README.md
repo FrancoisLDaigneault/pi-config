@@ -8,7 +8,6 @@
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](pyproject.toml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![mypy](https://img.shields.io/badge/mypy-strict-blue?logo=python&logoColor=white)](pyproject.toml)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20(branch)-brightgreen)](pyproject.toml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
 [![License](https://img.shields.io/github/license/fld-forge/pi-config)](LICENSE)
@@ -71,7 +70,8 @@ These standards are **enforced automatically** at two levels:
 - **Pre-commit hooks** ([pre-commit framework](https://pre-commit.com),
   `.pre-commit-config.yaml`): on the changed files, hygiene checks plus ruff
   lint and format through its mirror hooks (with autofix) and lockfile
-  consistency; whole-project local hooks then run `uv run mypy`,
+  consistency; whole-project local hooks then run
+  `uv run ty check --error-on-warning src scripts tests`,
   `uv run deptry src` (keeps the stdlib-only invariant honest) and
   `uv run pytest -q` (the whole suite, with its 90% branch-coverage floor)
   before every commit. Replay everything with
@@ -80,7 +80,8 @@ These standards are **enforced automatically** at two levels:
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
   `windows-latest` runs `uv sync --locked` then the five full-project gate
   commands (`uv run ruff check .`, `uv run ruff format --check .`,
-  `uv run mypy`, `uv run deptry src`, `uv run pytest -q`); separate Linux jobs
+  `uv run ty check --error-on-warning src scripts tests`, `uv run deptry src`,
+  `uv run pytest -q`); separate Linux jobs
   run a full-history secret scan (gitleaks), a dependency audit (pip-audit)
   and a workflow audit (zizmor).
 

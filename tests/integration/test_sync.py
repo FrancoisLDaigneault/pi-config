@@ -135,8 +135,7 @@ def test_sync_rmtree_failure_exits_1(
     def boom(path: Path) -> None:
         raise OSError("access denied")
 
-    # sync.shutil is the global shutil module: patching it directly is equivalent
-    # (mypy strict forbids access to the implicit re-export sync.shutil)
+    # Patch the defining module rather than relying on an implicit re-export.
     monkeypatch.setattr(shutil, "rmtree", boom)
     assert main() == 1
     assert "cannot clean" in capsys.readouterr().out
