@@ -51,7 +51,7 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Ruff violations (C901=8, PLR0915=30, PLR0913=5) | 0 | 0 | `uv run ruff check .` (pre-commit framework + CI) |
+| Ruff selected-rule violations | 0 | 0 | `uv run ruff check .` (pre-commit framework + CI) |
 | Static type diagnostics | 0 in ty and mypy at adoption | 0 blocking | both checkers in pre-commit, `just check`, and CI `quality` |
 | src module / script size | max 140 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
 | Green tests | 53 (32 unit / 19 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
