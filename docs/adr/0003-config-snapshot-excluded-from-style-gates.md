@@ -13,7 +13,7 @@ reality, and the next sync reverts the fix - an infinite loop.
 ## Decision
 
 Exclude `config/` from the style, type and language gates by configuration:
-`extend-exclude` under `[tool.ruff]`, the `[tool.mypy]` files list, pytest
+`extend-exclude` under `[tool.ruff]`, explicit ty command paths, pytest
 `testpaths`, and the language-gate file list. Security gates still apply in
 full: gitleaks scans the complete history including `config/`, and `sync.py`
 redacts secrets before any file enters the repo.

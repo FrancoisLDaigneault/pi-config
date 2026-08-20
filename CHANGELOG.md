@@ -112,7 +112,7 @@
 ### Features
 
 * add supply-chain gates, release automation and governance docs ([c8d478c](https://github.com/fld-forge/pi-config/commit/c8d478cd113eb3ddd8dad74d9ff8dcf05f4ee34e))
-* enforce strict static typing with mypy ([cc1533d](https://github.com/fld-forge/pi-config/commit/cc1533d69e8e4ce0e7b7fd390adbb1dc294204ad))
+* enforce strict static typing ([cc1533d](https://github.com/fld-forge/pi-config/commit/cc1533d69e8e4ce0e7b7fd390adbb1dc294204ad))
 * initial Pi configuration snapshot with uv-based tooling ([147e632](https://github.com/fld-forge/pi-config/commit/147e6324a6ffbfdc3e5792c7797c9da773c93414))
 
 
