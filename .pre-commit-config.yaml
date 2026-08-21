@@ -31,13 +31,18 @@ repos:
     hooks:
       - id: uv-lock
 
-  # gitleaks has pass_filenames: false and reads the staged index itself, so the
-  # global exclude: ^config/ does not apply to it; that is intentional (CI parity).
+  # gitleaks reads the staged diff itself (pass_filenames: false), so what it
+  # scans is the whole staged change, config/ included. always_run is what keeps
+  # it reaching that point: pre-commit applies the global exclude: ^config/ to
+  # the file list first and skips a hook whose list came out empty, which on a
+  # commit staging only snapshot files would drop the secrets gate exactly where
+  # a live-machine secret is most likely to enter.
   - repo: https://github.com/gitleaks/gitleaks
     # rev matches the gitleaks version pinned in CI (ci.yml "secrets-scan")
     rev: v8.24.3
     hooks:
       - id: gitleaks
+        always_run: true
 
   - repo: local
     hooks:
