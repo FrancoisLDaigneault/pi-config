@@ -1,0 +1,17 @@
+# Patched files in node_modules
+
+Local modifications to installed packages, versioned here because any `npm install` or package update overwrites them. Directory entries are snapshotted whole, so every local edit inside them is preserved:
+
+- `context-mode/build/adapters/pi/extension.js`
+- `context-mode/skills`
+- `bigpowers/.pi/skills`
+- `bigpowers/skills`
+- `bigpowers/scripts`
+- `pi-mcp-adapter/ui-server.ts`
+- `pi-subagents/src/runs/shared/mcp-direct-tool-allowlist.ts`
+- `pi-claude-bridge/src/index.ts`
+- `pi-claude-bridge/src/provider-only.ts`
+
+context-mode version at sync time: 1.0.169.
+
+Copy them back after each update with `uv run scripts/restore.py --apply --patch`.

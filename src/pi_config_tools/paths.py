@@ -20,6 +20,8 @@ PATCHED_RELS: tuple[Path, ...] = (
     Path("bigpowers/scripts"),
     Path("pi-mcp-adapter/ui-server.ts"),
     Path("pi-subagents/src/runs/shared/mcp-direct-tool-allowlist.ts"),
+    Path("pi-claude-bridge/src/index.ts"),
+    Path("pi-claude-bridge/src/provider-only.ts"),
 )
 
 
