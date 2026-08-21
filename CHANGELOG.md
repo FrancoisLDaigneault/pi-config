@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.5](https://github.com/fld-forge/pi-config/compare/v0.6.4...v0.6.5) (2026-08-21)
+
+
+### Bug Fixes
+
+* persist provider-only Claude bridge patch ([#64](https://github.com/fld-forge/pi-config/issues/64)) ([811b0c5](https://github.com/fld-forge/pi-config/commit/811b0c50aee8bdfe8d6f9db7d5461ec050dbd532))
+
 ## [0.6.4](https://github.com/fld-forge/pi-config/compare/v0.6.3...v0.6.4) (2026-08-21)
 
 
