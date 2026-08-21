@@ -166,7 +166,7 @@ def test_release_pr_checks_claim_matches_workflow() -> None:
     )
     assert claim, "AGENTS.md: conditional release-PR checks claim not found"
     agents = _text("AGENTS.md")
-    for anchor in ("merge_method=squash", "verification.verified"):
+    for anchor in ("merge_method=squash", "-f sha=", "verification.verified"):
         assert anchor in agents, (
             f"AGENTS.md: the guarded REST squash runbook for release PRs must "
             f"quote {anchor!r} (required_signatures blocks GraphQL merges of "
