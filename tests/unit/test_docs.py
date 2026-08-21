@@ -123,6 +123,30 @@ def test_coverage_floor_documented() -> None:
     )
 
 
+def test_agents_skills_snapshot_status_documented() -> None:
+    """The fresh-machine promise about ~/.agents/skills must match the repo.
+
+    config/agents-skills only exists when the live folder held files at sync
+    time (git never versions empty folders), and restore skips sections
+    absent from the snapshot. The README must state the snapshot's current
+    status, so the restore promise cannot silently diverge from what a
+    fresh machine actually gets back.
+    """
+    snapshot = REPO / "config" / "agents-skills"
+    captured = snapshot.is_dir() and any(p.is_file() for p in snapshot.rglob("*"))
+    claim = re.search(
+        r"`config/agents-skills/` is currently (absent from the repo|captured)",
+        _flat("README.md"),
+    )
+    assert claim, "README.md: agents-skills snapshot status claim not found"
+    says_captured = claim.group(1) == "captured"
+    assert says_captured == captured, (
+        f"README.md says the agents-skills snapshot is "
+        f"{'captured' if says_captured else 'absent'}, but config/agents-skills "
+        f"{'has files' if captured else 'is absent or empty'}"
+    )
+
+
 def test_python_version_documented() -> None:
     with (REPO / "pyproject.toml").open("rb") as fh:
         requires = tomllib.load(fh)["project"]["requires-python"]

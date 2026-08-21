@@ -116,7 +116,7 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 
 | Script | Role |
 | --- | --- |
-| `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Run before every commit. |
+| `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Sections missing or empty on the live side are named and skipped. Run before every commit. |
 | `uv run scripts/restore.py` | The reverse path: `config/` -> live locations. **Simulation by default**; add `--apply` to execute. Never touches `auth.json`. Existing, differing files under `.pi/agent` require `--force`; vendor patches remain freely restorable with `--patch`. Additive: never deletes obsolete live files. |
 | `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. Option `--destination`. Exit code 1 if a section fails. |
 
@@ -148,7 +148,7 @@ Order matters: the context-mode patch must be copied back **after** the npm inst
 
 1. **Install Pi** (and `uv`) on the new machine.
 2. **Clone this repo**: `git clone <url> pi-config && cd pi-config && uv sync --locked`, then `uv run pre-commit install --install-hooks` (re-enables the pre-commit hooks).
-3. **Restore the Pi config** (without the patch): `uv run scripts/restore.py` to check in simulation, then `uv run scripts/restore.py --apply`. This puts back `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`) and `~/.agents/skills`.
+3. **Restore the Pi config** (without the patch): `uv run scripts/restore.py` to check in simulation, then `uv run scripts/restore.py --apply`. This puts back `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`), plus `~/.agents/skills` when the snapshot holds it. `config/agents-skills/` is currently absent from the repo - its last skill was deliberately removed in #34 and git never versions the now-empty folder - so restore prints `info: agents-skills/ missing from the repo, skipped` (the doc gate `test_agents_skills_snapshot_status_documented` keeps this paragraph honest).
 4. **Reinstall Pi's npm packages**: `cd ~/.pi/agent/npm && npm ci` (the lockfile restored in step 3 guarantees exact versions).
 5. **Reapply the context-mode patch** - now that `node_modules` exists: `uv run scripts/restore.py --apply --patch` (from the repo).
 6. **Restore `auth.json`** from a local `backup.py` backup (never in the repo): copy it by hand to `~/.pi/agent/auth.json`.
