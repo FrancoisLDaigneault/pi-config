@@ -17,7 +17,7 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Test suite duration | 2.8 s (53 tests) | < 5 s | `uv run pytest -q` (CI gate) |
+| Test suite duration | 3.15 s (53 tests) | < 5 s | `uv run pytest -q` (CI gate) |
 
 Measurement cadence: CI runs on every push/PR to `main` and every Monday at
 06:00 UTC - the weekly run catches bit-rot without anyone pushing.
@@ -35,7 +35,7 @@ Supporting indicators:
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
 | `auth.json` tracked by git | never | never | `sync.py` exclusion + `.gitignore` + e2e test |
-| Release integrity (SBOM + provenance attestation) | v0.6.2 verified with `gh attestation verify` | every release verified | release assets + attestation check (see `SECURITY.md`) |
+| Release integrity (SBOM + provenance attestation) | v0.6.2: 5/5 assets verified | every release verified | `gh attestation verify <asset> --repo fld-forge/pi-config` for every release asset (see `SECURITY.md`) |
 | Semgrep CE findings | 0 at adoption | 0 blocking | `uvx semgrep==1.173.0 scan --config p/python --metrics=off --error src scripts` in CI |
 | Open vulnerability alerts / time-to-patch | baseline not yet recorded | record baseline, then 0 critical open | GitHub Security tab (CodeQL, `uv audit --locked`, pip-audit, Dependency Review, Dependabot, secret scanning) |
 
@@ -51,7 +51,7 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Ruff selected-rule violations | 0 | 0 | `uv run ruff check .` (pre-commit framework + CI) |
+| Ruff selected-rule violations | 0 | 0 | `uv run ruff check .` (`just check`, pre-commit framework, and CI `quality`) |
 | Static type diagnostics | 0 in ty and mypy at adoption | 0 blocking | both checkers in pre-commit, `just check`, and CI `quality` |
 | Import architecture | 2/2 contracts kept; 0 TID251 violations | 0 violations | `uv run lint-imports` plus `uv run ruff check .` in every quality surface |
 | src module / script size | max 148 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
@@ -71,6 +71,6 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| `config/` snapshot freshness | synced on 2026-08-18 | sync before every Pi update | README sync -> PR workflow |
+| `config/` snapshot freshness | latest tracked update on 2026-08-19 | sync before every Pi update | `git log -1 --format=%as -- config/` after the README sync -> PR workflow |
 
 A KPI that is always green effortlessly should be tightened; a KPI that is always red should be fixed or dropped.
