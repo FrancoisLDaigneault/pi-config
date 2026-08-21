@@ -243,3 +243,107 @@ def test_python_version_documented() -> None:
     assert agents.group(1) == version, (
         f"AGENTS.md says Python {agents.group(1)}+, pyproject requires {requires}"
     )
+
+
+_NUMBER_WORDS = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+
+
+def test_gate_command_count_documented() -> None:
+    count = len(_gate_commands())
+    assert count in _NUMBER_WORDS, f"justfile check recipe has {count} commands; extend the map"
+    word = _NUMBER_WORDS[count]
+    claims = {
+        "README.md": rf"the {word} full-project gate commands",
+        "AGENTS.md": rf"The {word} quality commands",
+    }
+    for doc, pattern in claims.items():
+        assert re.search(pattern, _flat(doc)), (
+            f"{doc}: gate-command count claim {pattern!r} not found "
+            f"(justfile check recipe has {count} commands)"
+        )
+
+
+def test_ci_schedule_documented() -> None:
+    """The documented CI cadence and runner must match ci.yml."""
+    ci = _text(".github/workflows/ci.yml")
+    cron = re.search(r'cron: "(\d+) (\d+) \* \* (\d+)"', ci)
+    assert cron, "ci.yml: weekly cron entry not found"
+    minute, hour, dow = (int(g) for g in cron.groups())
+    day = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")[dow]
+    stamp = rf"{day} (?:at )?{hour:02d}:{minute:02d} UTC"
+    for doc in ("README.md", "NORTHSTAR.md"):
+        assert re.search(stamp, _flat(doc)), f"{doc}: CI schedule claim {stamp!r} not found"
+    runner = re.search(r"\n  quality:\n(?:.+\n)*?    runs-on: (\S+)", ci)
+    assert runner, "ci.yml: quality job runs-on not found"
+    claim = re.search(r"quality job on `([\w-]+)`", _flat("README.md"))
+    assert claim, "README.md: quality-job runner claim not found"
+    assert claim.group(1) == runner.group(1), (
+        f"README.md says the quality job runs on {claim.group(1)}, ci.yml uses {runner.group(1)}"
+    )
+
+
+def test_security_jobs_documented() -> None:
+    """Every non-quality CI job must be named in README.md and SECURITY.md.
+
+    The mapping pins each ci.yml job id to the token the docs use for it;
+    adding or removing a job fails here until the docs and the mapping are
+    updated together.
+    """
+    ci = _text(".github/workflows/ci.yml")
+    jobs = set(re.findall(r"^  ([a-z][\w-]*):$", ci.split("\njobs:\n", 1)[1], re.MULTILINE))
+    tokens = {
+        "secrets-scan": "gitleaks",
+        "uv-audit": "uv audit --locked",
+        "pip-audit": "pip-audit",
+        "dependency-review": "Dependency Review",
+        "semgrep": "Semgrep",
+        "zizmor": "zizmor",
+    }
+    assert jobs - {"quality"} == set(tokens), (
+        f"ci.yml jobs {sorted(jobs - {'quality'})} diverge from the mapping "
+        f"{sorted(tokens)}; update README.md, SECURITY.md and this test together"
+    )
+    for doc in ("README.md", "SECURITY.md"):
+        text = _flat(doc)
+        missing = [t for t in tokens.values() if t not in text]
+        assert not missing, f"{doc}: security scans not mentioned: {missing}"
+    severity = re.search(r"fail-on-severity: (\w+)", ci)
+    assert severity, "ci.yml: dependency-review fail-on-severity not found"
+    claim = re.search(r"(\w+)-or-higher findings blocking", _flat("SECURITY.md"))
+    assert claim, "SECURITY.md: dependency-review severity claim not found"
+    assert claim.group(1) == severity.group(1), (
+        f"SECURITY.md says {claim.group(1)}-or-higher blocks, "
+        f"ci.yml sets fail-on-severity {severity.group(1)}"
+    )
+
+
+def test_semgrep_command_documented() -> None:
+    quoted = re.search(r"`(uvx semgrep==[^`]+)`", _flat("NORTHSTAR.md"))
+    assert quoted, "NORTHSTAR.md: quoted semgrep command not found"
+    assert f"- run: {quoted.group(1)}" in _text(".github/workflows/ci.yml"), (
+        f"NORTHSTAR.md quotes {quoted.group(1)!r}; ci.yml runs a different semgrep command"
+    )
+
+
+def test_release_assets_documented() -> None:
+    """The documented release-asset inventory must match the workflow steps.
+
+    Producer tokens prove each asset is still built; the doc names prove each
+    asset is still documented. Removing a workflow step fails here until the
+    asset lists in README.md, SECURITY.md and AGENTS.md are updated too.
+    """
+    workflow = _text(".github/workflows/release-please.yml")
+    producers = (
+        "uv build",
+        "sbom.cdx.json",
+        "sbom.spdx.json",
+        "SHA256SUMS",
+        "attest-build-provenance",
+    )
+    gone = [p for p in producers if p not in workflow]
+    assert not gone, f"release-please.yml: asset-producing steps missing: {gone}"
+    names = ("wheel", "sdist", "CycloneDX", "SPDX", "SHA-256", "attestation")
+    for doc in ("README.md", "SECURITY.md", "AGENTS.md"):
+        text = _flat(doc)
+        missing = [n for n in names if n not in text]
+        assert not missing, f"{doc}: release assets not mentioned: {missing}"
