@@ -12,7 +12,8 @@ Layout: `src/pi_config_tools/` (logic, one testable `main(argv)` per command),
 ## Hard rules
 
 - `config/` is a snapshot of the live machine, produced by `sync.py`.
-  Never edit it by hand; it is excluded from every quality gate.
+  Never edit it by hand; it is excluded from the style gates (Ruff, deptry,
+  the language scan - ADR-0003); gitleaks and the test suite still cover it.
 - `auth.json` is never committed (excluded by `sync.py` and `.gitignore`).
 - English only, everywhere you write. An accent-heuristic gate
   (`tests/unit/test_language.py`) fails the suite on accented characters.
@@ -61,8 +62,11 @@ CycloneDX + SPDX SBOMs, SHA-256 checksums, provenance attestation).
 - `uv run` may rewrite `uv.lock` when `pyproject.toml` is ahead of it
   (post-release window). Restore with `git checkout -- uv.lock` unless the
   change is intended.
-- release-please PRs show no CI checks (GitHub anti-recursion with
-  `GITHUB_TOKEN`). Inspect the PR diff and rely on post-merge CI on `main`.
+- release-please PRs run CI only when the `RELEASE_PLEASE_TOKEN` secret exists
+  (a fine-grained PAT; with the `github.token` fallback GitHub's anti-recursion
+  suppresses the checks - see `.github/workflows/release-please.yml`). Check
+  the PR's checks tab rather than assuming either state; post-merge CI on
+  `main` always runs.
 - CRLF warnings on Windows are checkout-side only; committed blobs are LF
   (`.gitattributes` enforces `eol=lf`).
 - Repo-local SSH commit signing is configured (`commit.gpgsign true`);

@@ -147,6 +147,88 @@ def test_agents_skills_snapshot_status_documented() -> None:
     )
 
 
+def test_release_pr_checks_claim_matches_workflow() -> None:
+    """The AGENTS.md release-PR quirk must track the workflow's token logic.
+
+    release-please pushes the release PR with RELEASE_PLEASE_TOKEN when the
+    secret exists (PR gets CI like any branch) and falls back to github.token
+    otherwise (GitHub anti-recursion: no checks). The doc claim must stay
+    conditional as long as the workflow carries that fallback.
+    """
+    workflow = _text(".github/workflows/release-please.yml")
+    assert "secrets.RELEASE_PLEASE_TOKEN || github.token" in workflow, (
+        "release-please.yml: token fallback expression is gone; rewrite the "
+        "AGENTS.md release-PR checks quirk for the new unconditional behavior"
+    )
+    claim = re.search(
+        r"release-please PRs run CI only when the `RELEASE_PLEASE_TOKEN` secret exists",
+        _flat("AGENTS.md"),
+    )
+    assert claim, "AGENTS.md: conditional release-PR checks claim not found"
+
+
+def test_config_exclusion_claim_matches_tooling() -> None:
+    """AGENTS.md must name the gates that skip config/ and only those.
+
+    config/ is excluded from the style gates (ADR-0003) but gitleaks scans
+    its full history and pytest exercises snapshot behavior, so a claim of
+    blanket exclusion would be false. Each named style gate must actually
+    exclude config/ in its configuration.
+    """
+    with (REPO / "pyproject.toml").open("rb") as fh:
+        tool = tomllib.load(fh)["tool"]
+    assert "config" in tool["ruff"]["extend-exclude"], "pyproject: ruff no longer excludes config/"
+    assert "config" in tool["deptry"]["extend_exclude"], (
+        "pyproject: deptry no longer excludes config/"
+    )
+    assert "config/ (live-config snapshot)" in _text("tests/unit/test_language.py"), (
+        "test_language.py: config/ exclusion note is gone"
+    )
+    claim = re.search(
+        r"excluded from the style gates \(Ruff, deptry, the language scan - ADR-0003\); "
+        r"gitleaks and the test suite still cover it",
+        _flat("AGENTS.md"),
+    )
+    assert claim, "AGENTS.md: narrowed config/ style-gate exclusion claim not found"
+
+
+def _ruff_caps() -> tuple[int, int, int, int]:
+    with (REPO / "pyproject.toml").open("rb") as fh:
+        ruff = tomllib.load(fh)["tool"]["ruff"]
+    return (
+        ruff["line-length"],
+        ruff["lint"]["mccabe"]["max-complexity"],
+        ruff["lint"]["pylint"]["max-statements"],
+        ruff["lint"]["pylint"]["max-args"],
+    )
+
+
+def test_ruff_caps_documented() -> None:
+    line, complexity, statements, args = _ruff_caps()
+    claims = {
+        "README.md": (
+            r"line length (\d+)\): cyclomatic complexity \*\*max (\d+)\*\*, "
+            r"\*\*max (\d+) statements\*\* and \*\*max (\d+) arguments\*\*",
+            (line, complexity, statements, args),
+        ),
+        "AGENTS.md": (
+            r"McCabe <= (\d+), <= (\d+) statements and <= (\d+) arguments per function, "
+            r"lines <= (\d+)",
+            (complexity, statements, args, line),
+        ),
+        "CONTRIBUTING.md": (
+            r"\(McCabe\) <= (\d+) - <= (\d+) statements per function, <= (\d+) arguments - "
+            r"Lines <= (\d+) characters",
+            (complexity, statements, args, line),
+        ),
+    }
+    for doc, (pattern, expected) in claims.items():
+        match = re.search(pattern, _flat(doc))
+        assert match, f"{doc}: ruff caps claim matching {pattern!r} not found"
+        found = tuple(int(g) for g in match.groups())
+        assert found == expected, f"{doc} says ruff caps {found}, pyproject enforces {expected}"
+
+
 def test_python_version_documented() -> None:
     with (REPO / "pyproject.toml").open("rb") as fh:
         requires = tomllib.load(fh)["project"]["requires-python"]

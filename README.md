@@ -54,9 +54,9 @@ commands documented here stay unchanged.
 
 ## Quality standards (enforced by tooling)
 
-- `ruff` (rules E/F/W/I/PL/C90/S, line 100): cyclomatic complexity **max 8**,
-  **max 30 statements** and **max 5 arguments** per function - `uv run ruff check .`
-  must pass with zero violations.
+- `ruff` (rule families selected in `pyproject.toml`, line length 100): cyclomatic
+  complexity **max 8**, **max 30 statements** and **max 5 arguments** per
+  function - `uv run ruff check .` must pass with zero violations.
 - `tests/unit/test_standards.py` fails the suite if a module in `src/` exceeds
   **200 lines** or a script in `scripts/` exceeds **20 lines**: the size limit
   is a test, not a promise.
@@ -138,7 +138,7 @@ gh pr create --fill          # squash-merge once the checks are green
 This machine also runs a daily scheduled backup task (`pi-config-daily-backup`,
 19:00) as a machine-side safeguard; it is not installed by this repository.
 
-After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`, whose generated `README.md` lists the covered entries (`paths.PATCHED_RELS`: the context-mode extension plus the vendored skill directories, snapshotted whole so local edits inside them are never lost).
+After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`; the authoritative list of covered entries is `PATCHED_RELS` in `src/pi_config_tools/paths.py`, mirrored by that folder's generated `README.md`.
 
 If `sync.py` fails midway (unreadable JSON, permission denied), `config/` may be left partial: recover it with `git restore config/`.
 
