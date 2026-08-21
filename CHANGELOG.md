@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.4](https://github.com/fld-forge/pi-config/compare/v0.6.3...v0.6.4) (2026-08-21)
+
+
+### Documentation
+
+* adopt the guarded REST squash runbook for release PRs ([#61](https://github.com/fld-forge/pi-config/issues/61)) ([7e92fff](https://github.com/fld-forge/pi-config/commit/7e92fff9b2932b0fe9de28404be53dfa15bca8d0)), closes [#60](https://github.com/fld-forge/pi-config/issues/60)
+
 ## [0.6.3](https://github.com/fld-forge/pi-config/compare/v0.6.2...v0.6.3) (2026-08-21)
 
 
