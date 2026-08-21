@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.3](https://github.com/fld-forge/pi-config/compare/v0.6.2...v0.6.3) (2026-08-21)
+
+
+### Documentation
+
+* correct stale claims, keep the README lean, and gate doc drift ([#59](https://github.com/fld-forge/pi-config/issues/59)) ([5e527ff](https://github.com/fld-forge/pi-config/commit/5e527ff34a976082d8e956606b183f2e90515b0b))
+* refresh NORTHSTAR measurements ([#57](https://github.com/fld-forge/pi-config/issues/57)) ([494736d](https://github.com/fld-forge/pi-config/commit/494736d56606d8f2fde8768b2dc1f6e26a23d499))
+
 ## [0.6.2](https://github.com/fld-forge/pi-config/compare/v0.6.1...v0.6.2) (2026-08-20)
 
 

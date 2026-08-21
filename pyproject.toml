@@ -1,6 +1,6 @@
 [project]
 name = "pi-config-tools"
-version = "0.6.2"
+version = "0.6.3"
 description = "Sync, restore and backup tools for the Pi configuration"
 requires-python = ">=3.12"
 license = "MIT"
