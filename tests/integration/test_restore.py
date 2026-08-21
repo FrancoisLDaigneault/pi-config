@@ -1,5 +1,6 @@
 """Integration: restore against a sandbox (dry-run, --apply, auth.json, --patch)."""
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -60,6 +61,22 @@ def test_apply_never_touches_auth_json(
 
     assert main(["--apply"]) == 0
     assert not (fresh / ".pi" / "agent" / "auth.json").exists()
+
+
+def test_restore_names_a_section_absent_from_the_snapshot(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A section missing from config/ is named and skipped, never silent.
+
+    Mirrors the real repo since #34: config/agents-skills vanished when its
+    last skill was removed, because git never versions empty folders.
+    """
+    _home, repo = sandbox
+    assert sync.main() == 0
+    shutil.rmtree(repo / "config" / "agents-skills")
+
+    assert main([]) == 0
+    assert "info: agents-skills/ missing from the repo, skipped" in capsys.readouterr().out
 
 
 def test_restore_flags_a_differing_live_file(

@@ -40,3 +40,6 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Generated Graphify knowledge-graph artifacts
+graphify-out/

@@ -29,7 +29,8 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-# config/ is a live-machine snapshot, never hand-edited: keep every gate off it
+# config/ is a live-machine snapshot, never hand-edited: the style gates skip it
+# (gitleaks and the test suite still cover it - ADR-0003)
 extend-exclude = ["config"]
 
 [tool.ruff.lint]

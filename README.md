@@ -54,9 +54,9 @@ commands documented here stay unchanged.
 
 ## Quality standards (enforced by tooling)
 
-- `ruff` (rules E/F/W/I/PL/C90/S, line 100): cyclomatic complexity **max 8**,
-  **max 30 statements** and **max 5 arguments** per function - `uv run ruff check .`
-  must pass with zero violations.
+- `ruff` (rule families selected in `pyproject.toml`, line length 100): cyclomatic
+  complexity **max 8**, **max 30 statements** and **max 5 arguments** per
+  function - `uv run ruff check .` must pass with zero violations.
 - `tests/unit/test_standards.py` fails the suite if a module in `src/` exceeds
   **200 lines** or a script in `scripts/` exceeds **20 lines**: the size limit
   is a test, not a promise.
@@ -116,7 +116,7 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 
 | Script | Role |
 | --- | --- |
-| `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Run before every commit. |
+| `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Sections missing or empty on the live side are named and skipped. Run before every commit. |
 | `uv run scripts/restore.py` | The reverse path: `config/` -> live locations. **Simulation by default**; add `--apply` to execute. Never touches `auth.json`. Existing, differing files under `.pi/agent` require `--force`; vendor patches remain freely restorable with `--patch`. Additive: never deletes obsolete live files. |
 | `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. Option `--destination`. Exit code 1 if a section fails. |
 
@@ -138,7 +138,7 @@ gh pr create --fill          # squash-merge once the checks are green
 This machine also runs a daily scheduled backup task (`pi-config-daily-backup`,
 19:00) as a machine-side safeguard; it is not installed by this repository.
 
-After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`, whose generated `README.md` lists the covered entries (`paths.PATCHED_RELS`: the context-mode extension plus the vendored skill directories, snapshotted whole so local edits inside them are never lost).
+After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`; the authoritative list of covered entries is `PATCHED_RELS` in `src/pi_config_tools/paths.py`, mirrored by that folder's generated `README.md`.
 
 If `sync.py` fails midway (unreadable JSON, permission denied), `config/` may be left partial: recover it with `git restore config/`.
 
@@ -148,7 +148,7 @@ Order matters: the context-mode patch must be copied back **after** the npm inst
 
 1. **Install Pi** (and `uv`) on the new machine.
 2. **Clone this repo**: `git clone <url> pi-config && cd pi-config && uv sync --locked`, then `uv run pre-commit install --install-hooks` (re-enables the pre-commit hooks).
-3. **Restore the Pi config** (without the patch): `uv run scripts/restore.py` to check in simulation, then `uv run scripts/restore.py --apply`. This puts back `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`) and `~/.agents/skills`.
+3. **Restore the Pi config** (without the patch): `uv run scripts/restore.py` to check in simulation, then `uv run scripts/restore.py --apply`. This puts back `~/.pi/agent` (persona, extensions, prompts, skills, settings, `npm/package.json` + `package-lock.json`), plus `~/.agents/skills` when the snapshot holds it. `config/agents-skills/` is currently absent from the repo - its last skill was deliberately removed in #34 and git never versions the now-empty folder - so restore prints `info: agents-skills/ missing from the repo, skipped` (the doc gate `test_agents_skills_snapshot_status_documented` keeps this paragraph honest).
 4. **Reinstall Pi's npm packages**: `cd ~/.pi/agent/npm && npm ci` (the lockfile restored in step 3 guarantees exact versions).
 5. **Reapply the context-mode patch** - now that `node_modules` exists: `uv run scripts/restore.py --apply --patch` (from the repo).
 6. **Restore `auth.json`** from a local `backup.py` backup (never in the repo): copy it by hand to `~/.pi/agent/auth.json`.
