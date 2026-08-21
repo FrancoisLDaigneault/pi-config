@@ -19,7 +19,10 @@ def test_claude_bridge_provider_only_patch_is_persisted() -> None:
     assert index_rel in paths.PATCHED_RELS
     assert provider_rel in paths.PATCHED_RELS
 
-    snapshot = Path(__file__).resolve().parents[2] / "config" / "patched-node-modules"
+    snapshot = Path(__file__).resolve().parents[2] / "config" / paths.PATCHED_SNAPSHOT_DIR
+    missing = [rel for rel in paths.PATCHED_RELS if not (snapshot / rel).exists()]
+    assert missing == []
+
     index = (snapshot / index_rel).read_text(encoding="utf-8")
     provider = (snapshot / provider_rel).read_text(encoding="utf-8")
     assert "if (askConf?.enabled && opts.askClaudeTool) {" in index

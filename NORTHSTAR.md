@@ -45,7 +45,7 @@ North Star KPI:
 
 | KPI | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Branch coverage | 94.70% | >= 90% (enforced floor) | every full `uv run pytest` run (pre-commit framework + CI + `just check`) |
+| Branch coverage | 94.72% | >= 90% (enforced floor) | every full `uv run pytest` run (pre-commit framework + CI + `just check`) |
 
 Supporting indicators:
 

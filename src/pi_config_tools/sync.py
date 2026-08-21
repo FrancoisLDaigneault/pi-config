@@ -101,7 +101,7 @@ def _write_patch_readme(dest_root: Path) -> None:
 
 def _sync_patch() -> int:
     """Patched entries in node_modules (overwritten by any npm update)."""
-    dest_root = paths.config_dir() / "patched-node_modules"
+    dest_root = paths.config_dir() / paths.PATCHED_SNAPSHOT_DIR
     total = copy_patched(dest_root)
     if not total:
         return 0
