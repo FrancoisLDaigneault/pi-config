@@ -57,6 +57,27 @@ PR carries `pyproject.toml`, `uv.lock`, `CHANGELOG.md` and the manifest;
 merging it creates the tag and fires the release-assets job (wheel, sdist,
 CycloneDX + SPDX SBOMs, SHA-256 checksums, provenance attestation).
 
+### Merging release PRs (guarded REST squash)
+
+`gh pr merge --squash` fails on release-please PRs: their heads are unsigned
+(REST-created, no signing option upstream - googleapis/release-please#1314,
+googleapis/release-please-action#1104) and the GraphQL preflight fails them
+against `required_signatures` on `main`. The REST merge builds a GitHub-signed
+squash commit instead, so once every required check is green:
+
+```bash
+head_sha=$(gh pr view <n> --json headRefOid --jq .headRefOid)
+gh api -X PUT repos/fld-forge/pi-config/pulls/<n>/merge \
+  -f merge_method=squash -f sha="$head_sha"
+merge_sha=$(gh api repos/fld-forge/pi-config/pulls/<n> --jq .merge_commit_sha)
+gh api repos/fld-forge/pi-config/commits/$merge_sha \
+  --jq .commit.verification.verified  # MUST print true
+```
+
+The `sha` pin rejects a race with a refreshed head; the postcondition proves
+the protected branch got a verified commit. Never bypass with `--admin` or a
+ruleset change.
+
 ## Known quirks
 
 - `uv run` may rewrite `uv.lock` when `pyproject.toml` is ahead of it
