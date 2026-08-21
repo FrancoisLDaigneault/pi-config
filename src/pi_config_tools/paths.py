@@ -8,6 +8,8 @@ repository containing config/) environment variables.
 import os
 from pathlib import Path
 
+PATCHED_SNAPSHOT_DIR = Path("patched-node_modules")
+
 # Relative paths (identical on the live side and the repo side) of the locally patched
 # entries under node_modules. An entry is either a single file or a whole directory:
 # directories are snapshotted entirely, so every local edit inside them is preserved
@@ -20,6 +22,8 @@ PATCHED_RELS: tuple[Path, ...] = (
     Path("bigpowers/scripts"),
     Path("pi-mcp-adapter/ui-server.ts"),
     Path("pi-subagents/src/runs/shared/mcp-direct-tool-allowlist.ts"),
+    Path("pi-claude-bridge/src/index.ts"),
+    Path("pi-claude-bridge/src/provider-only.ts"),
 )
 
 

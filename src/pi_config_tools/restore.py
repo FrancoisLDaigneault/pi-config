@@ -24,7 +24,7 @@ def _mappings() -> list[tuple[Path, Path]]:
     config = paths.config_dir()
     return [
         (config / "pi-agent", paths.pi_agent()),
-        (config / "patched-node_modules", paths.pi_agent() / "npm" / "node_modules"),
+        (config / paths.PATCHED_SNAPSHOT_DIR, paths.pi_agent() / "npm" / "node_modules"),
         (config / "agents-skills", paths.agents_skills()),
     ]
 
@@ -35,7 +35,7 @@ def list_files(root: Path) -> list[Path]:
 
 def _skip_repo_doc(src_root: Path, src: Path, rel: Path) -> bool:
     """The patched-node_modules README documents the repo; it is not restored."""
-    is_patch_root = src_root.name == "patched-node_modules"
+    is_patch_root = src_root.name == paths.PATCHED_SNAPSHOT_DIR.name
     return is_patch_root and src.name == "README.md" and len(rel.parts) == 1
 
 
@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     count = 0
     refused = 0
     for src_root, dst_root in _mappings():
-        if src_root.name == "patched-node_modules" and not args.patch:
+        if src_root.name == paths.PATCHED_SNAPSHOT_DIR.name and not args.patch:
             print(
                 "  info: patched-node_modules/ skipped (use --patch AFTER "
                 "the npm install, see README)"

@@ -36,7 +36,7 @@ def _backup_pi_agent(dest: Path) -> int:
 
 
 def _backup_patch(dest: Path) -> int:
-    dest_root = dest / "patched-node_modules"
+    dest_root = dest / paths.PATCHED_SNAPSHOT_DIR
     total = copy_patched(dest_root)
     if not total:
         print("  warning: no patched node_modules entry found, section skipped")

@@ -4,12 +4,29 @@ from pathlib import Path
 
 import pytest
 
+from pi_config_tools import paths
 from pi_config_tools.patched import context_mode_version
 
 
 def _touch(path: Path, content: str = "x") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def test_claude_bridge_provider_only_patch_is_persisted() -> None:
+    index_rel = Path("pi-claude-bridge/src/index.ts")
+    provider_rel = Path("pi-claude-bridge/src/provider-only.ts")
+    assert index_rel in paths.PATCHED_RELS
+    assert provider_rel in paths.PATCHED_RELS
+
+    snapshot = Path(__file__).resolve().parents[2] / "config" / paths.PATCHED_SNAPSHOT_DIR
+    missing = [rel for rel in paths.PATCHED_RELS if not (snapshot / rel).exists()]
+    assert missing == []
+
+    index = (snapshot / index_rel).read_text(encoding="utf-8")
+    provider = (snapshot / provider_rel).read_text(encoding="utf-8")
+    assert "if (askConf?.enabled && opts.askClaudeTool) {" in index
+    assert "activate(pi, { askClaudeTool: false });" in provider
 
 
 def test_context_mode_version_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
