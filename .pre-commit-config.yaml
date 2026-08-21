@@ -31,6 +31,14 @@ repos:
     hooks:
       - id: uv-lock
 
+  # gitleaks has pass_filenames: false and reads the staged index itself, so the
+  # global exclude: ^config/ does not apply to it; that is intentional (CI parity).
+  - repo: https://github.com/gitleaks/gitleaks
+    # rev matches the gitleaks version pinned in CI (ci.yml "secrets-scan")
+    rev: v8.24.3
+    hooks:
+      - id: gitleaks
+
   - repo: local
     hooks:
       # always_run: without it pre-commit skips these whole-project gates
