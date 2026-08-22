@@ -76,8 +76,38 @@ def test_backup_refuses_a_destination_that_is_a_backed_up_root(
     assert main(["--destination", str(mem)]) == 1
     out = capsys.readouterr().out
     assert "is the backed-up folder" in out
-    assert "would copy itself" in out
+    assert "pick an empty folder outside" in out
     assert sorted(p.name for p in mem.iterdir()) == before, "nothing may be written"
+
+
+def test_backup_refuses_a_destination_that_already_holds_files(
+    sandbox: tuple[Path, Path], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Reusing a folder mixes two runs, and the summary still reports a success.
+
+    A file deleted upstream, or a `-wal` whose database is gone, survives in
+    the destination and a restore replays it: nothing in the result says which
+    run it came from.
+    """
+    dest = tmp_path / "backup"
+    dest.mkdir()
+    stale = dest / "gone-from-source.txt"
+    stale.write_text("deleted upstream months ago", encoding="utf-8")
+
+    assert main(["--destination", str(dest)]) == 1
+    assert "is not empty" in capsys.readouterr().out
+    assert [p.name for p in dest.iterdir()] == [stale.name], "nothing may be written"
+
+
+def test_backup_accepts_a_destination_that_exists_but_is_empty(
+    sandbox: tuple[Path, Path], tmp_path: Path
+) -> None:
+    """Pre-creating the folder is ordinary; only leftovers are refused."""
+    dest = tmp_path / "backup"
+    dest.mkdir()
+
+    assert main(["--destination", str(dest)]) == 0
+    assert (dest / "pi-agent").is_dir()
 
 
 def test_backup_refuses_a_destination_under_a_backed_up_root(

@@ -30,6 +30,18 @@ def rejected_destination(dest: Path) -> str | None:
     and a restore cannot tell the backup from what it was backing up. Both
     sides are resolved, so `..` segments and symlinks cannot smuggle a
     destination back under a source.
+
+    Known limit: resolution is textual, so two names for the same volume (a
+    mapped drive or a UNC share pointing at the same folder) are not seen as
+    equal. Comparing physical identity would mean carrying a Windows-specific
+    file-id probe for a case a single maintainer reaches by choosing to, and
+    the containment check is defence in depth rather than the last line: pick
+    a destination outside the backed-up roots.
+
+    A non-empty destination is refused as well. Writing into one leaves files
+    from an earlier run beside the new ones -- deleted upstream, or companions
+    of a database that no longer exists -- and nothing in the result says which
+    run a file came from, while the summary still reports a success.
     """
     resolved = dest.resolve()
     for root in (paths.pi_agent(), paths.agents_skills(), paths.mempalace()):
@@ -38,6 +50,10 @@ def rejected_destination(dest: Path) -> str | None:
             return f"the destination is the backed-up folder {source} itself"
         if source in resolved.parents:
             return f"the destination is inside the backed-up folder {source}"
+    if dest.is_file():
+        return f"{dest} is a file, not a folder"
+    if dest.is_dir() and any(dest.iterdir()):
+        return f"{dest} is not empty, and a backup must not be mixed with an earlier one"
     return None
 
 
@@ -129,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     # have written into the tree being backed up.
     rejection = rejected_destination(dest)
     if rejection is not None:
-        print(f"error: {rejection}, so the backup would copy itself - pick a folder outside it.")
+        print(f"error: {rejection} - pick an empty folder outside the backed-up roots.")
         return 1
     dest.mkdir(parents=True, exist_ok=True)
     print(f"Backing up to: {dest}\n")
