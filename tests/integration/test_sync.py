@@ -211,7 +211,14 @@ def test_sync_says_the_snapshot_is_missing_when_the_rollback_also_failed(
 def test_sync_recovers_a_snapshot_left_aside_by_an_interrupted_run(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """config/ missing plus exactly one aside copy is the deterministic crash state."""
+    """config/ missing plus exactly one aside copy is the deterministic crash state.
+
+    Recovery restores the git reference, not the content: the sync that follows
+    rebuilds config/ from the live tree, so PRECIOUS.md is gone by the end and
+    that is correct. What the recovery actually moved is asserted where it can
+    still be seen -- in test_fsops.py, and in the test below, where the rebuild
+    never gets far enough to replace it.
+    """
     _home, repo = sandbox
     aside = repo / "config.old-deadbeef"
     aside.mkdir()
@@ -221,7 +228,33 @@ def test_sync_recovers_a_snapshot_left_aside_by_an_interrupted_run(
     out = capsys.readouterr().out
     assert "a previous sync was interrupted" in out
     assert not aside.exists(), "the aside copy is moved back, not copied"
-    assert (repo / "config").is_dir()
+    assert (repo / "config" / "pi-agent").is_dir(), "the rebuild replaces what was recovered"
+
+
+def test_sync_keeps_the_recovered_snapshot_when_the_rebuild_fails(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Recovery has to put the files back, not merely announce that it did.
+
+    A recovery that deleted the aside and printed the same line passed the test
+    above -- replayed, it did, because nothing there reads the recovered files.
+    Invalid live JSON stops the rebuild before the swap, so the snapshot is
+    still on disk at the end and its content can be read back.
+    """
+    home, repo = sandbox
+    aside = repo / "config.old-deadbeef"
+    aside.mkdir()
+    (aside / "PRECIOUS.md").write_text("irreplaceable", encoding="utf-8")
+    (home / ".pi" / "agent" / "mcp.json").write_text("{ not json", encoding="utf-8")
+
+    assert main() == 1
+    out = capsys.readouterr().out
+
+    assert "a previous sync was interrupted" in out
+    assert (repo / "config" / "PRECIOUS.md").read_text(encoding="utf-8") == "irreplaceable", (
+        "the recovered snapshot must be the files themselves, not a line about them"
+    )
+    assert not aside.exists()
 
 
 def test_sync_refuses_to_choose_between_several_aside_copies(

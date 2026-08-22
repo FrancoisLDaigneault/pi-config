@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from pi_config_tools.fsops import SwapError, copy_tree, swap_dir
+from pi_config_tools.fsops import (
+    SwapError,
+    copy_tree,
+    recover_interrupted_swap,
+    swap_dir,
+)
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -190,3 +195,34 @@ def test_swap_dir_reports_an_aside_copy_it_could_not_remove(
     assert leftover.name.startswith("t.old-")
     assert (leftover / "old.txt").is_file()
     assert (target / "new.txt").read_text(encoding="utf-8") == "new snapshot"
+
+
+def test_recover_interrupted_swap_moves_the_snapshot_back(tmp_path: Path) -> None:
+    """The content has to arrive, not merely the announcement.
+
+    Asserting only that the aside is gone and that a message was printed is
+    satisfied by a recovery that deletes the snapshot instead of restoring it
+    -- replayed, that mutant passed. The file is read back here for that
+    reason.
+    """
+    config = tmp_path / "config"
+    aside = tmp_path / "config.old-deadbeef"
+    _touch(aside / "PRECIOUS.md", "irreplaceable")
+
+    assert recover_interrupted_swap(config) is None
+
+    assert (config / "PRECIOUS.md").read_text(encoding="utf-8") == "irreplaceable"
+    assert not aside.exists(), "the snapshot is moved back, not copied"
+
+
+def test_recover_interrupted_swap_leaves_an_existing_target_alone(tmp_path: Path) -> None:
+    """Nothing to recover: the live snapshot must not be replaced by an old one."""
+    config = tmp_path / "config"
+    _touch(config / "live.txt", "current")
+    aside = tmp_path / "config.old-deadbeef"
+    _touch(aside / "live.txt", "stale")
+
+    assert recover_interrupted_swap(config) is None
+
+    assert (config / "live.txt").read_text(encoding="utf-8") == "current"
+    assert aside.exists(), "an aside beside a live config is not this function's business"
