@@ -22,7 +22,15 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Test suite duration | 6.25 s (114 tests), read 2026-08-22 | < 5 s | `uv run pytest -q` (CI gate) |
+| Median cost per test | 52 ms (5.88 s / 114 tests), read 2026-08-22 | < 60 ms | The wall clock below divided by the number of tests it reports |
+| Test suite duration (feedback-loop ceiling) | 5.88 s (114 tests), median of 11 warm runs, read 2026-08-22 | < 10 s | `uv run pytest -q` (CI gate). `addopts` adds `--cov`, about 19% of that wall clock, so this speed reading pays for the coverage gate. One run is noise - 5.45 to 6.25 s observed across 11 - so the figure is a median, never a single reading |
+
+Cost per test is what catches a real slowdown: a sleep, a fixture that grew, a
+timeout actually waited on. A wall-clock target alone punished the opposite -
+the 42 tests added to close three silent data losses moved the suite from 72 to
+114 while the cost per test went from 53 ms to 55 ms, turning that work red and
+contradicting the `Green tests` indicator of this same file. The ceiling is what
+the old target really protected: the edit-run loop.
 
 Measurement cadence: CI runs on every push/PR to `main` and every Monday at
 06:00 UTC - the weekly run catches bit-rot without anyone pushing.
