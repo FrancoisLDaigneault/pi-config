@@ -4,6 +4,8 @@ import shutil
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from pi_config_tools.sqlite_backup import backup_db, is_sqlite, sidecar_parent, snapshot_tree
 
 
@@ -119,6 +121,47 @@ def test_snapshot_tree_skips_sidecars_and_keeps_plain_files(tmp_path: Path) -> N
     assert (dst / "notes.md").read_text(encoding="utf-8") == "plain"
     assert not list(dst.rglob("*-wal")), "sidecars must not be copied alongside a snapshot"
     assert not list(dst.rglob("*-shm"))
+
+
+def test_backup_db_gives_up_on_a_database_a_writer_will_not_release(tmp_path: Path) -> None:
+    """The connect timeout does not bound backup(); the deadline does.
+
+    Measured before this guard existed: a database held under BEGIN EXCLUSIVE
+    kept backup() waiting the full 90 s the lock was held, even though the
+    connection carried timeout=5. A stuck writer must fail the section, not
+    hang the whole backup.
+    """
+    src = tmp_path / "held.sqlite3"
+    con = sqlite3.connect(src)
+    con.execute("CREATE TABLE t (v TEXT)")
+    con.executemany("INSERT INTO t VALUES (?)", [(f"row-{i}",) for i in range(2000)])
+    con.commit()
+    con.close()
+
+    holder = sqlite3.connect(src, isolation_level=None)
+    holder.execute("BEGIN EXCLUSIVE")
+    dst = tmp_path / "out.sqlite3"
+    try:
+        with pytest.raises(TimeoutError, match="still locked"):
+            backup_db(src, dst, busy_timeout_s=0.1, deadline_s=0.05)
+    finally:
+        holder.execute("COMMIT")
+        holder.close()
+
+    assert dst.stat().st_size == 0, "a snapshot that timed out must hold no partial data"
+
+
+def test_backup_db_deadline_does_not_disturb_an_unlocked_database(tmp_path: Path) -> None:
+    """Batching plus a deadline must not change the ordinary result."""
+    src = tmp_path / "free.sqlite3"
+    con = _live_wal_db(src, rows=6)
+    try:
+        dst = tmp_path / "out" / "free.sqlite3"
+        backup_db(src, dst, deadline_s=30.0)
+    finally:
+        con.close()
+
+    assert _rows(dst) == 6
 
 
 def test_snapshot_tree_keeps_a_plain_file_named_like_a_sidecar(tmp_path: Path) -> None:
