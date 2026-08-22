@@ -83,19 +83,25 @@ def staging_for(target: Path) -> Path:
 
 
 def report_stale_stagings(target: Path) -> None:
-    """Name build trees an earlier run left behind. Never remove them.
+    """Name build trees that are not this run's. Never remove them.
 
     A run killed between building and swapping leaves its staging tree, and it
     is gitignored like the aside copy, so `git status` stays silent while they
     accumulate. Deleting one from here would be worse than leaving it: the pid
     in the name may belong to a sync running right now, or to a process whose
     pid has since been reused. Naming it lets the operator decide.
+
+    The message says so too. Calling every foreign tree the leftover of a
+    finished run and telling the operator to delete it is advice that destroys
+    a concurrent run's work, which is exactly what this function refuses to do
+    itself.
     """
     mine = staging_for(target).name
     for path in sorted(target.parent.glob(f".{target.name}-staging-*")):
         if path.name != mine:
-            print(f"  warning: a previous run left a build tree at {path}")
-            print("  it is gitignored, so nothing else will mention it; remove it by hand")
+            print(f"  warning: another or a previous run left a build tree at {path}")
+            print("  it is gitignored, so nothing else will mention it; make sure no other")
+            print("  sync is running, then remove it by hand")
 
 
 def recover_interrupted_swap(config: Path) -> str | None:

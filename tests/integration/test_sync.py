@@ -290,6 +290,10 @@ def test_sync_names_a_build_tree_left_by_an_earlier_run(
     It is named rather than removed: the pid in the name may belong to a sync
     running right now, or to a process whose pid has since been reused, and
     deleting a live run's build tree would be worse than leaving this one.
+
+    The warning has to carry that same doubt. Sync cannot tell a dead run's
+    tree from a live one's, so an instruction to delete it without qualifying
+    it is advice to destroy a concurrent run's work.
     """
     _home, repo = sandbox
     stale = repo / ".config-staging-dead"
@@ -301,6 +305,8 @@ def test_sync_names_a_build_tree_left_by_an_earlier_run(
 
     assert str(stale) in out, "the path must be named, not merely counted"
     assert "remove it by hand" in out
+    assert "another or a previous run" in out, "it may be a live run's tree, not a leftover"
+    assert "make sure no other" in out, "deleting it blind is the dangerous part"
     assert (stale / "GHOST.md").is_file(), "an unknown build tree is not sync's to delete"
     assert f".config-staging-{os.getpid()}" not in out, (
         "a run must not warn about the build tree it just made itself"
