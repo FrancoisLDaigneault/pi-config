@@ -7,6 +7,12 @@
 # quality gate (AGENTS.md hard rule): never check or touch it.
 exclude: ^config/
 
+# Declared here rather than passed as install flags, so the plain install
+# command every document already prints wires both types: a merge that commits
+# on its own runs pre-merge-commit, not pre-commit, and would otherwise bring in
+# changes no gate ever saw.
+default_install_hook_types: [pre-commit, pre-merge-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
