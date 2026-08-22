@@ -166,10 +166,45 @@ def test_sync_swap_failure_exits_1_and_keeps_the_previous_snapshot(
     monkeypatch.setattr(os, "replace", deny)
     assert main() == 1
     out = capsys.readouterr().out
-    assert "cannot install the new snapshot" in out
-    assert "left unchanged" in out
+    assert "could not move the previous" in out
+    assert "is unchanged" in out
     assert (config / "PRECIOUS.md").read_text(encoding="utf-8") == "irreplaceable"
     assert not list(repo.glob(".config-staging-*")), "the staging tree must be cleaned up"
+
+
+def test_sync_says_the_snapshot_is_missing_when_the_rollback_also_failed(
+    sandbox: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Install and rollback both fail: name the aside copy, never say 'unchanged'."""
+    _home, repo = sandbox
+    config = repo / "config"
+    config.mkdir()
+    (config / "PRECIOUS.md").write_text("irreplaceable", encoding="utf-8")
+    real_replace = os.replace
+    calls: list[int] = []
+
+    def fail_after_first(src: Path, dst: Path) -> None:
+        calls.append(1)
+        if len(calls) == 1:
+            real_replace(src, dst)
+            return
+        raise PermissionError("access denied (simulated)")
+
+    monkeypatch.setattr(os, "replace", fail_after_first)
+    assert main() == 1
+    out = capsys.readouterr().out
+
+    assert "IS MISSING" in out, "the operator must be told the snapshot is gone"
+    assert "is unchanged" not in out, "claiming it is unchanged is the bug under test"
+    asides = list(repo.glob("config.old-*"))
+    assert len(asides) == 1
+    assert (asides[0] / "PRECIOUS.md").read_text(encoding="utf-8") == "irreplaceable"
+    assert str(asides[0]) in out, "the recovery path must be printed, not merely implied"
+    assert list(repo.glob(".config-staging-*")), (
+        "the new snapshot is the only complete copy left and must not be deleted"
+    )
 
 
 def test_sync_leaves_no_staging_directory_behind(sandbox: tuple[Path, Path]) -> None:

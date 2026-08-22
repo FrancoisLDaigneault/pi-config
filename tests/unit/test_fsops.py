@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pi_config_tools.fsops import copy_tree, swap_dir
+from pi_config_tools.fsops import SwapError, copy_tree, swap_dir
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -97,9 +97,10 @@ def test_swap_dir_first_rename_failure_leaves_the_target_untouched(
         raise PermissionError("WinError 5 (simulated)")
 
     monkeypatch.setattr(os, "replace", deny)
-    with pytest.raises(PermissionError):
+    with pytest.raises(SwapError) as raised:
         swap_dir(staging, target)
 
+    assert raised.value.target_intact, "the target is still there and must be reported as such"
     assert (target / "old.txt").read_text(encoding="utf-8") == "old snapshot", (
         "the previous snapshot must survive a failed first rename"
     )
@@ -121,15 +122,55 @@ def test_swap_dir_second_rename_failure_rolls_the_old_tree_back(
         real_replace(src, dst)
 
     monkeypatch.setattr(os, "replace", fail_on_second)
-    with pytest.raises(PermissionError):
+    with pytest.raises(SwapError) as raised:
         swap_dir(staging, target)
 
     assert len(calls) == 3, "the rollback rename must run after the failed install"
+    assert raised.value.target_intact, "the rollback put it back, so it is intact"
     assert (target / "old.txt").read_text(encoding="utf-8") == "old snapshot", (
         "the previous snapshot must be rolled back into place"
     )
     assert not (target / "new.txt").exists()
     assert list(tmp_path.glob("t.old-*")) == [], "the aside copy must not be left behind"
+
+
+def test_swap_dir_reports_a_failed_rollback_instead_of_claiming_nothing_moved(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Install AND rollback raise: the target is gone and must be said to be gone.
+
+    This is the case that used to lie. The rollback error replaced the install
+    error, the caller printed "left unchanged", and the previous snapshot was
+    sitting under an aside name nothing pointed at.
+    """
+    staging, target = _staged_pair(tmp_path)
+    real_replace = os.replace
+    calls: list[int] = []
+
+    def fail_after_first(src: Path, dst: Path) -> None:
+        calls.append(1)
+        if len(calls) == 1:  # move the old tree aside: let it through
+            real_replace(src, dst)
+            return
+        raise PermissionError(f"WinError 5 (simulated, call {len(calls)})")
+
+    monkeypatch.setattr(os, "replace", fail_after_first)
+    with pytest.raises(SwapError) as raised:
+        swap_dir(staging, target)
+
+    failure = raised.value
+    assert len(calls) == 3, "the rollback must be attempted before giving up"
+    assert not failure.target_intact, "the target is missing and must not be called intact"
+    assert not target.exists()
+    assert failure.aside is not None and (failure.aside / "old.txt").is_file(), (
+        "the previous snapshot must be named so the operator can put it back"
+    )
+    assert failure.staging == staging and (staging / "new.txt").is_file()
+    assert "call 2" in str(failure) and "call 3" in str(failure), (
+        "both failures must survive in the message, not just the last one"
+    )
+    assert isinstance(failure.__cause__, PermissionError), "the chain must be preserved"
+    assert isinstance(failure.__cause__.__context__, PermissionError)
 
 
 def test_swap_dir_reports_an_aside_copy_it_could_not_remove(

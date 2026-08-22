@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import copy_file, copy_tree, swap_dir
+from pi_config_tools.fsops import SwapError, copy_file, copy_tree, swap_dir
 from pi_config_tools.patched import context_mode_version, copy_patched
 from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
@@ -132,6 +132,20 @@ def _build(dest: Path) -> tuple[int, list[str]] | None:
     return total, redacted + scan_copied_json(dest)
 
 
+def _report_swap_failure(exc: SwapError, config: Path) -> None:
+    """Say what the filesystem actually looks like, never what it should."""
+    print(f"  error: {exc}")
+    if exc.target_intact:
+        print(f"  {config} is unchanged.")
+        return
+    print(f"  {config} IS MISSING - do not run git restore, it would not bring it back.")
+    if exc.aside is not None:
+        print(f"  the previous snapshot is at {exc.aside}")
+        print(f"  recover it with:  mv {exc.aside} {config}")
+    if exc.staging is not None:
+        print(f"  the new snapshot is complete at {exc.staging} and was left in place")
+
+
 def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup symmetry
     del argv
     config = paths.config_dir()
@@ -145,13 +159,15 @@ def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup 
             # Nothing has touched config/ yet: the previous snapshot is intact.
             return 1
         total, redacted = built
-        try:
-            leftover = swap_dir(staging, config)
-        except OSError as exc:
-            print(f"  error: cannot install the new snapshot ({exc}) - {config} left unchanged")
-            return 1
+        leftover = swap_dir(staging, config)
+    except SwapError as exc:
+        _report_swap_failure(exc, config)
+        return 1
     finally:
-        shutil.rmtree(staging, ignore_errors=True)
+        # Kept when the target is missing: the staging tree is then the only
+        # complete copy of the new snapshot, and the message above points at it.
+        if config.exists():
+            shutil.rmtree(staging, ignore_errors=True)
 
     if leftover is not None:
         print(f"  warning: previous snapshot left behind at {leftover}, remove it by hand")
