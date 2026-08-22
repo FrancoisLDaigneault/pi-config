@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from pi_config_tools.fsops import (
+from pi_config_tools.dirswap import (
     SwapError,
-    copy_tree,
     recover_interrupted_swap,
     swap_dir,
 )
+from pi_config_tools.fsops import copy_tree
 
 
 def _touch(path: Path, content: str = "x") -> None:

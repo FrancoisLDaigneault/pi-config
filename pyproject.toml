@@ -81,6 +81,7 @@ source_modules = ["pi_config_tools.secrets"]
 forbidden_modules = [
     "pi_config_tools.paths",
     "pi_config_tools.fsops",
+    "pi_config_tools.dirswap",
     "pi_config_tools.patched",
     "pi_config_tools.backup",
     "pi_config_tools.restore",
