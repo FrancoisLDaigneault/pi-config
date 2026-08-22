@@ -9,6 +9,16 @@ import pytest
 from pi_config_tools.sync import main
 
 
+def _snapshot(root: Path) -> dict[str, bytes]:
+    """Every file under `root`, by content - directories excluded on purpose.
+
+    Reading a directory raises PermissionError on Windows, which would make the
+    survival assertion below fail for a reason that has nothing to do with the
+    snapshot surviving.
+    """
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
 def test_sync_copies_and_excludes(sandbox: tuple[Path, Path]) -> None:
     home, repo = sandbox
     live_mcp = home / ".pi" / "agent" / "mcp.json"
@@ -118,10 +128,25 @@ def test_sync_rebuilds_config_from_scratch(sandbox: tuple[Path, Path]) -> None:
 def test_sync_invalid_live_json_exits_1(
     sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    home, _repo = sandbox
+    """An invalid live JSON aborts the sync AND leaves the last snapshot intact.
+
+    Asserting the exit code alone passed against the version that deleted
+    config/ before reading anything: the run failed loudly while the previous
+    snapshot was already gone. What has to hold is that it survives.
+    """
+    home, repo = sandbox
+    config = repo / "config"
+    config.mkdir()
+    (config / "PRECIOUS.md").write_text("irreplaceable", encoding="utf-8")
+    before = _snapshot(config)
+
     (home / ".pi" / "agent" / "settings.json").write_text("{not json", encoding="utf-8")
     assert main() == 1
     assert "sync aborted" in capsys.readouterr().out
+
+    after = _snapshot(config)
+    assert after == before, "a failed sync must leave the previous snapshot byte-identical"
+    assert not list(repo.glob(".config-staging-*")), "the staging tree must be cleaned up"
 
 
 def test_sync_swap_failure_exits_1_and_keeps_the_previous_snapshot(
