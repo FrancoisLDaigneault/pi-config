@@ -3,8 +3,9 @@
 # Mirror hooks are pinned to tags matching the versions locked in uv.lock;
 # ty, mypy, deptry, Import Linter and pytest run as local system hooks so they use the
 # project venv and stay aligned with CI (see ADR-0010 and ADR-0011).
-# config/ is a byte-faithful live-machine snapshot, excluded from every
-# quality gate (AGENTS.md hard rule): never check or touch it.
+# config/ is a byte-faithful live-machine snapshot, excluded from the style
+# gates (AGENTS.md hard rule): never edit it by hand. The secrets gate below
+# still covers it - that is what its always_run is for.
 exclude: ^config/
 
 # Declared here rather than passed as install flags, so the plain install
