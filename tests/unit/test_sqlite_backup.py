@@ -133,6 +133,11 @@ def test_backup_db_gives_up_on_a_database_a_writer_will_not_release(tmp_path: Pa
     kept backup() waiting the full 90 s the lock was held, even though the
     connection carried timeout=5. A stuck writer must fail the section, not
     hang the whole backup.
+
+    The connect timeout is not the smaller of the two here, so it cannot be
+    what ends the wait: sqlite would raise OperationalError instead of the
+    TimeoutError asserted below. Lowering it under `deadline_s` would shave a
+    little time off the run and cost the demonstration.
     """
     src = tmp_path / "held.sqlite3"
     con = sqlite3.connect(src)
@@ -146,7 +151,7 @@ def test_backup_db_gives_up_on_a_database_a_writer_will_not_release(tmp_path: Pa
     dst = tmp_path / "out.sqlite3"
     try:
         with pytest.raises(TimeoutError, match="still locked"):
-            backup_db(src, dst, busy_timeout_s=0.1, deadline_s=0.05)
+            backup_db(src, dst, busy_timeout_s=0.05, deadline_s=0.05)
     finally:
         holder.execute("COMMIT")
         holder.close()
