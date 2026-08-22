@@ -77,7 +77,9 @@ These standards are **enforced automatically** at two levels:
   `uv run lint-imports` (enforces package seams) and `uv run pytest -q`
   (the whole suite, with its 90% branch-coverage floor)
   before every commit. Replay everything with
-  `uv run pre-commit run --all-files`.
+  `uv run pre-commit run --all-files`, except the secrets gate: gitleaks reads
+  the staged diff, so it has nothing to scan when nothing is staged; run
+  `gitleaks git --redact -v .` for the full-history scan CI performs.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): on every push/PR to `main`
   and every Monday 06:00 UTC (catches bit-rot without pushes), a quality job on
   `windows-latest` runs `uv sync --locked` then the seven full-project gate
