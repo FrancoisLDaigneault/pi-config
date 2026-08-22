@@ -40,6 +40,7 @@ With [just](https://just.systems) installed (`winget install Casey.Just`), the
 src/pi_config_tools/   # business logic (package installed in editable mode)
   paths.py             # paths, redirectable via PI_CONFIG_HOME / PI_CONFIG_REPO (tests)
   fsops.py             # copy_tree/copy_file with exclusions
+  dirswap.py           # installing a staging tree as config/, and crash recovery
   patched.py           # copy and metadata operations for local node_modules patches
   secrets.py           # detection and redaction of secrets in JSON files
   sqlite_backup.py     # consistent snapshots of SQLite databases (never a file copy)

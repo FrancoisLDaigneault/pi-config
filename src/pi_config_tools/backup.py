@@ -50,7 +50,7 @@ def rejected_destination(dest: Path) -> str | None:
     reaching it takes another writer aiming at a destination that is freshly
     timestamped by default. Closing it would mean building into a private
     folder and publishing it at the end, which is the non-atomic directory
-    swap `fsops.swap_dir` documents as the expensive part of this codebase on
+    swap `dirswap.swap_dir` documents as the expensive part of this codebase on
     Windows. Both checks here are defence in depth, not the last line.
     """
     resolved = dest.resolve()

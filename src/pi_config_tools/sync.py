@@ -9,15 +9,14 @@ import sys
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import (
+from pi_config_tools.dirswap import (
     SwapError,
-    copy_file,
-    copy_tree,
     recover_interrupted_swap,
     report_stale_stagings,
     staging_for,
     swap_dir,
 )
+from pi_config_tools.fsops import copy_file, copy_tree
 from pi_config_tools.patched import context_mode_version, copy_patched
 from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
