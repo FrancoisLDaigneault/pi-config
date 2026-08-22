@@ -42,6 +42,16 @@ def rejected_destination(dest: Path) -> str | None:
     from an earlier run beside the new ones -- deleted upstream, or companions
     of a database that no longer exists -- and nothing in the result says which
     run a file came from, while the summary still reports a success.
+
+    Second known limit, of the same kind: that emptiness is read once, and
+    anything landing in the folder afterwards is still mixed into a backup
+    reported as a success. Nothing inside this program can open that window --
+    between the check and the first section it only creates the folder -- so
+    reaching it takes another writer aiming at a destination that is freshly
+    timestamped by default. Closing it would mean building into a private
+    folder and publishing it at the end, which is the non-atomic directory
+    swap `fsops.swap_dir` documents as the expensive part of this codebase on
+    Windows. Both checks here are defence in depth, not the last line.
     """
     resolved = dest.resolve()
     for root in (paths.pi_agent(), paths.agents_skills(), paths.mempalace()):
