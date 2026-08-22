@@ -96,6 +96,53 @@ def backup_db(
         source.close()
 
 
+def _snapshot_databases(entries: list[Path], dst: Path) -> set[str]:
+    """Take every database in `entries`, and name the ones actually taken.
+
+    Only the names returned may have their companions dropped later, so a file
+    that stopped being a database before it could be snapshotted must not be
+    listed here: it is left to the copying pass, which reads it again.
+    """
+    snapshotted: set[str] = set()
+    for item in entries:
+        if not (item.is_file() and is_sqlite(item)):
+            continue
+        try:
+            backup_db(item, dst / item.name)
+        except sqlite3.DatabaseError:
+            if is_sqlite(item):
+                raise
+            continue  # no longer a database: the second pass copies it plainly
+        snapshotted.add(item.name)
+    return snapshotted
+
+
+def _take(item: Path, target: Path) -> bool:
+    """Copy one file, snapshotting it when it is a database *at copy time*.
+
+    Returns True when it was taken as a database snapshot.
+
+    Reading the header and copying the file cannot be made one atomic step, so
+    the loser of that race is handled rather than classified in advance. A file
+    that stopped being a database in between is copied for what it now is; the
+    error is only swallowed once a second read confirms the type really
+    changed, because a database that is still a database and still refuses to
+    be snapshotted is a genuine failure and must not be hidden behind a plain
+    copy.
+    """
+    if not is_sqlite(item):
+        shutil.copy2(item, target)
+        return False
+    try:
+        backup_db(item, target)
+    except sqlite3.DatabaseError:
+        if is_sqlite(item):
+            raise
+        shutil.copy2(item, target)
+        return False
+    return True
+
+
 def snapshot_tree(src: Path, dst: Path) -> tuple[int, int]:
     """Copy `src` into `dst`, snapshotting databases instead of copying them.
 
@@ -105,19 +152,18 @@ def snapshot_tree(src: Path, dst: Path) -> tuple[int, int]:
     copied, including one whose name merely ends in a sidecar suffix.
 
     Databases are taken first so that decision never depends on the order
-    `iterdir` happens to return.
+    `iterdir` happens to return. That first pass decides which companions may
+    be dropped; it does NOT decide how the remaining files are copied. Each one
+    is read again by `_take` at the moment it is copied, because a file that
+    was ordinary when the pass started and is a live database by the time it is
+    reached would otherwise be copied without its WAL -- measured, the result
+    answered `ok` to an integrity check and had lost the table entirely.
 
     Returns (files written, databases snapshotted).
     """
     entries = sorted(src.iterdir())
-    files = databases = 0
-    snapshotted: set[str] = set()
-    for item in entries:
-        if item.is_file() and is_sqlite(item):
-            backup_db(item, dst / item.name)
-            snapshotted.add(item.name)
-            files += 1
-            databases += 1
+    snapshotted = _snapshot_databases(entries, dst)
+    files = databases = len(snapshotted)
     for item in entries:
         target = dst / item.name
         if item.is_dir():
@@ -129,6 +175,10 @@ def snapshot_tree(src: Path, dst: Path) -> tuple[int, int]:
             if parent is not None and parent.name in snapshotted:
                 continue
             dst.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(item, target)
+            if _take(item, target):
+                # Sorted order puts a database before its companions, so one
+                # promoted here still shields its own -wal from a plain copy.
+                snapshotted.add(item.name)
+                databases += 1
             files += 1
     return files, databases

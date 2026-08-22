@@ -2,10 +2,12 @@
 
 import shutil
 import sqlite3
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
+from pi_config_tools import sqlite_backup
 from pi_config_tools.sqlite_backup import backup_db, is_sqlite, sidecar_parent, snapshot_tree
 
 
@@ -217,3 +219,157 @@ def test_snapshot_tree_copies_a_file_that_only_looks_like_a_database(tmp_path: P
 
     assert (files, databases) == (1, 0)
     assert (dst / "impostor.sqlite3").read_text(encoding="utf-8") == "not a database"
+
+
+def test_snapshot_tree_snapshots_a_file_that_became_a_database_after_it_was_classified(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Deciding in the first pass and copying in the second leaves a window.
+
+    A file that is ordinary when the first pass reads it and a live WAL
+    database by the time the second pass copies it was copied byte for byte,
+    without its -wal. The result answered `ok` to an integrity check and held
+    an empty table, which is why the assertion below counts rows: the
+    integrity check is exactly what made the loss silent.
+
+    The promotion runs inside the snapshot of the other database, so it lands
+    between the two passes without either of them being stubbed.
+    """
+    src = tmp_path / "src"
+    latecomer = src / "aa.data"
+    _wal_db(src / "zz.sqlite3", rows=2)
+    latecomer.write_text("ordinary when the first pass reads it", encoding="utf-8")
+
+    live: list[sqlite3.Connection] = []
+    real_backup_db = sqlite_backup.backup_db
+
+    def snapshot_then_promote_the_latecomer(source: Path, target: Path) -> None:
+        real_backup_db(source, target)
+        if not live:
+            latecomer.unlink()
+            live.append(_live_wal_db(latecomer, rows=7))
+
+    monkeypatch.setattr(sqlite_backup, "backup_db", snapshot_then_promote_the_latecomer)
+    dst = tmp_path / "dst"
+    try:
+        files, databases = snapshot_tree(src, dst)
+        # Checked before the close: closing checkpoints the WAL and removes it,
+        # so a fixture that closes first can never prove the source was live.
+        assert (src / "aa.data-wal").exists(), "the source must really be a live database"
+    finally:
+        for connection in live:
+            connection.close()
+
+    con = sqlite3.connect(dst / "aa.data")
+    try:
+        assert con.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+    finally:
+        con.close()
+    assert _rows(dst / "aa.data") == 7, "an empty table answers ok to an integrity check too"
+    assert not list(dst.rglob("*-wal")), "the WAL is folded in, never copied beside it"
+    assert (files, databases) == (2, 2)
+
+
+def test_snapshot_tree_keeps_a_file_that_stopped_being_a_database_mid_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The mirror window: closing one must not open the other.
+
+    A database can be replaced by something else between the moment it is
+    recognised and the moment it is snapshotted. Failing there would lose the
+    whole backup and skipping it would lose the file, so it is copied for what
+    it has become.
+    """
+    src = tmp_path / "src"
+    _wal_db(src / "aa.sqlite3", rows=3)
+    victim = src / "aa.sqlite3"
+
+    def replace_it_instead_of_snapshotting_it(source: Path, target: Path) -> None:
+        victim.write_text("no longer a database", encoding="utf-8")
+        raise sqlite3.DatabaseError("file is not a database")
+
+    monkeypatch.setattr(sqlite_backup, "backup_db", replace_it_instead_of_snapshotting_it)
+    dst = tmp_path / "dst"
+    files, databases = snapshot_tree(src, dst)
+
+    assert (files, databases) == (1, 0)
+    assert (dst / "aa.sqlite3").read_text(encoding="utf-8") == "no longer a database"
+
+
+def test_snapshot_tree_still_fails_when_a_real_database_will_not_be_snapshotted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only a change of type is tolerated; a genuine failure still propagates."""
+    src = tmp_path / "src"
+    _wal_db(src / "aa.sqlite3", rows=3)
+
+    def refuse(source: Path, target: Path) -> None:
+        raise sqlite3.DatabaseError("disk I/O error")
+
+    monkeypatch.setattr(sqlite_backup, "backup_db", refuse)
+
+    with pytest.raises(sqlite3.DatabaseError, match="disk I/O error"):
+        snapshot_tree(src, tmp_path / "dst")
+
+
+def _promoted_latecomer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, on_second_call: Callable[[], None]
+) -> tuple[Path, Path]:
+    """A file ordinary in the first pass and a live database in the second.
+
+    `on_second_call` runs when the copying pass reaches it, which is the only
+    place the second window can be opened. Returns (src, dst).
+    """
+    src = tmp_path / "src"
+    latecomer = src / "aa.data"
+    _wal_db(src / "zz.sqlite3", rows=2)
+    latecomer.write_text("ordinary when the first pass reads it", encoding="utf-8")
+    live: list[sqlite3.Connection] = []
+    real_backup_db = sqlite_backup.backup_db
+
+    def promote_then_hand_over(source: Path, target: Path) -> None:
+        if not live:
+            real_backup_db(source, target)
+            latecomer.unlink()
+            live.append(_live_wal_db(latecomer, rows=7))
+            return
+        live.pop().close()
+        on_second_call()
+
+    monkeypatch.setattr(sqlite_backup, "backup_db", promote_then_hand_over)
+    return src, tmp_path / "dst"
+
+
+def test_snapshot_tree_copies_a_latecomer_that_stopped_being_a_database_again(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The mirror window on the copying pass: recognised, then ordinary again.
+
+    Re-reading the header just before the copy closes one race and opens the
+    symmetric one. A file that stops being a database between that read and
+    the snapshot must still reach the backup, as itself.
+    """
+
+    def demote_and_fail() -> None:
+        (tmp_path / "src" / "aa.data").write_text("ordinary again", encoding="utf-8")
+        raise sqlite3.DatabaseError("file is not a database")
+
+    src, dst = _promoted_latecomer(tmp_path, monkeypatch, demote_and_fail)
+    files, databases = snapshot_tree(src, dst)
+
+    assert (files, databases) == (2, 1), "the latecomer is a file again, not a database"
+    assert (dst / "aa.data").read_text(encoding="utf-8") == "ordinary again"
+
+
+def test_snapshot_tree_still_fails_when_a_latecomer_stays_a_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Same window, but the file is still a database: the error must surface."""
+
+    def fail_without_demoting() -> None:
+        raise sqlite3.DatabaseError("disk I/O error")
+
+    src, dst = _promoted_latecomer(tmp_path, monkeypatch, fail_without_demoting)
+
+    with pytest.raises(sqlite3.DatabaseError, match="disk I/O error"):
+        snapshot_tree(src, dst)
