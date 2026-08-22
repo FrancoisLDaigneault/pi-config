@@ -226,3 +226,24 @@ def test_recover_interrupted_swap_leaves_an_existing_target_alone(tmp_path: Path
 
     assert (config / "live.txt").read_text(encoding="utf-8") == "current"
     assert aside.exists(), "an aside beside a live config is not this function's business"
+
+
+def test_recover_interrupted_swap_ignores_an_aside_belonging_to_another_target(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Which asides are ours is part of the contract, not an implementation detail.
+
+    Widening the pattern to `*.old-*` keeps every other test green and then
+    installs a snapshot of a different target as config/, consuming it on the
+    way -- replayed, that mutant passed. Nothing left on disk would name the
+    tree it came from, so the loss would also be unattributable.
+    """
+    config = tmp_path / "config"
+    foreign = tmp_path / "cache.old-deadbeef"
+    _touch(foreign / "WRONG.txt", "belongs to another target")
+
+    assert recover_interrupted_swap(config) is None
+
+    assert not config.exists(), "an aside of another target is not a snapshot of this one"
+    assert (foreign / "WRONG.txt").read_text(encoding="utf-8") == "belongs to another target"
+    assert "recovered" not in capsys.readouterr().out, "nothing was recovered, so say nothing"
