@@ -72,6 +72,32 @@ class SwapError(OSError):
         self.staging = staging
 
 
+def staging_for(target: Path) -> Path:
+    """The transient build tree for `target`, beside it and tagged with the pid.
+
+    Beside it so the swap below is a rename on the same volume rather than a
+    cross-device copy, and pid-tagged so two runs never build into the same
+    tree.
+    """
+    return target.with_name(f".{target.name}-staging-{os.getpid()}")
+
+
+def report_stale_stagings(target: Path) -> None:
+    """Name build trees an earlier run left behind. Never remove them.
+
+    A run killed between building and swapping leaves its staging tree, and it
+    is gitignored like the aside copy, so `git status` stays silent while they
+    accumulate. Deleting one from here would be worse than leaving it: the pid
+    in the name may belong to a sync running right now, or to a process whose
+    pid has since been reused. Naming it lets the operator decide.
+    """
+    mine = staging_for(target).name
+    for path in sorted(target.parent.glob(f".{target.name}-staging-*")):
+        if path.name != mine:
+            print(f"  warning: a previous run left a build tree at {path}")
+            print("  it is gitignored, so nothing else will mention it; remove it by hand")
+
+
 def recover_interrupted_swap(config: Path) -> str | None:
     """Put back a snapshot a previous run was killed in the middle of moving.
 

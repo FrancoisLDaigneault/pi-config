@@ -282,6 +282,31 @@ def test_sync_leaves_no_staging_directory_behind(sandbox: tuple[Path, Path]) -> 
     assert not list(repo.glob("config.old-*"))
 
 
+def test_sync_names_a_build_tree_left_by_an_earlier_run(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A dead run's build tree is gitignored, so only sync can mention it.
+
+    It is named rather than removed: the pid in the name may belong to a sync
+    running right now, or to a process whose pid has since been reused, and
+    deleting a live run's build tree would be worse than leaving this one.
+    """
+    _home, repo = sandbox
+    stale = repo / ".config-staging-dead"
+    stale.mkdir()
+    (stale / "GHOST.md").write_text("from a killed run", encoding="utf-8")
+
+    assert main() == 0
+    out = capsys.readouterr().out
+
+    assert str(stale) in out, "the path must be named, not merely counted"
+    assert "remove it by hand" in out
+    assert (stale / "GHOST.md").is_file(), "an unknown build tree is not sync's to delete"
+    assert f".config-staging-{os.getpid()}" not in out, (
+        "a run must not warn about the build tree it just made itself"
+    )
+
+
 def test_sync_stops_when_a_stale_staging_tree_survives_cleanup(
     sandbox: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,

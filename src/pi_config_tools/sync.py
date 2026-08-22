@@ -4,7 +4,6 @@ Usage: uv run scripts/sync.py
 """
 
 import json
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -15,6 +14,8 @@ from pi_config_tools.fsops import (
     copy_file,
     copy_tree,
     recover_interrupted_swap,
+    report_stale_stagings,
+    staging_for,
     swap_dir,
 )
 from pi_config_tools.patched import context_mode_version, copy_patched
@@ -159,9 +160,8 @@ def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup 
     if interrupted is not None:
         print(f"  error: {interrupted}")
         return 1
-    # Built beside the target, so the swap below is a rename on the same volume
-    # and never a cross-device copy.
-    staging = config.with_name(f".{config.name}-staging-{os.getpid()}")
+    report_stale_stagings(config)
+    staging = staging_for(config)
     shutil.rmtree(staging, ignore_errors=True)
     if staging.exists():
         # Ignoring the cleanup error would fold a crashed run's leftovers into
