@@ -1,7 +1,7 @@
 """Integration: sync against a fake tree (never the real config)."""
 
 import json
-import shutil
+import os
 from pathlib import Path
 
 import pytest
@@ -124,18 +124,32 @@ def test_sync_invalid_live_json_exits_1(
     assert "sync aborted" in capsys.readouterr().out
 
 
-def test_sync_rmtree_failure_exits_1(
+def test_sync_swap_failure_exits_1_and_keeps_the_previous_snapshot(
     sandbox: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    """The build succeeds but installing it fails: report, and keep the old snapshot."""
     _home, repo = sandbox
-    (repo / "config").mkdir()
+    config = repo / "config"
+    config.mkdir()
+    (config / "PRECIOUS.md").write_text("irreplaceable", encoding="utf-8")
 
-    def boom(path: Path) -> None:
-        raise OSError("access denied")
+    def deny(*_args: object, **_kwargs: object) -> None:
+        raise PermissionError("access denied (simulated)")
 
-    # Patch the defining module rather than relying on an implicit re-export.
-    monkeypatch.setattr(shutil, "rmtree", boom)
+    monkeypatch.setattr(os, "replace", deny)
     assert main() == 1
-    assert "cannot clean" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "cannot install the new snapshot" in out
+    assert "left unchanged" in out
+    assert (config / "PRECIOUS.md").read_text(encoding="utf-8") == "irreplaceable"
+    assert not list(repo.glob(".config-staging-*")), "the staging tree must be cleaned up"
+
+
+def test_sync_leaves_no_staging_directory_behind(sandbox: tuple[Path, Path]) -> None:
+    """A successful sync must not leave the transient build tree in the repo."""
+    _home, repo = sandbox
+    assert main() == 0
+    assert not list(repo.glob(".config-staging-*"))
+    assert not list(repo.glob("config.old-*"))

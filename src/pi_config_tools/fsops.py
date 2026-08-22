@@ -1,6 +1,7 @@
 """File and tree copies with exclusions (stdlib only)."""
 
 import fnmatch
+import os
 import shutil
 from pathlib import Path
 
@@ -46,3 +47,42 @@ def copy_tree(
 def copy_file(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
+
+
+def swap_dir(staging: Path, target: Path) -> Path | None:
+    """Install `staging` as `target`, keeping the old content until the swap lands.
+
+    Three renames instead of a delete-then-rebuild: move the old target aside,
+    move the staging in, drop the aside copy. Each phase fails safe.
+
+    - the first rename raises  -> the target is untouched, nothing is lost;
+    - the second rename raises -> the aside copy is put back, then the error
+      propagates, so the caller never sees a half-installed target;
+    - the aside copy is removed only once the new target is in place.
+
+    `os.replace` is used rather than `Path.rename` because it must not fail on
+    an existing name, and directory-to-directory: on Windows replacing a
+    non-empty directory raises WinError 5, which is exactly why the old target
+    is renamed away first instead of being overwritten in place.
+
+    NOT strictly atomic, and the docstring says so on purpose: the second
+    rename and the rollback are themselves syscalls that can fail (an open
+    handle anywhere under the tree is enough on Windows). This narrows the
+    unsafe window to a single rename; it does not remove it.
+
+    Returns the leftover aside path when it could not be removed, else None.
+    """
+    aside = target.with_name(f"{target.name}.old-{os.getpid()}")
+    had_target = target.exists()
+    if had_target:
+        os.replace(target, aside)
+    try:
+        os.replace(staging, target)
+    except OSError:
+        if had_target:
+            os.replace(aside, target)
+        raise
+    if not had_target:
+        return None
+    shutil.rmtree(aside, ignore_errors=True)
+    return aside if aside.exists() else None

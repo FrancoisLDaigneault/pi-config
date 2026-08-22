@@ -1,8 +1,12 @@
 """Unit tests for copy_tree and the exclusions (everything in tmp_path)."""
 
+import os
+import shutil
 from pathlib import Path
 
-from pi_config_tools.fsops import copy_tree
+import pytest
+
+from pi_config_tools.fsops import copy_tree, swap_dir
 
 
 def _touch(path: Path, content: str = "x") -> None:
@@ -51,3 +55,97 @@ def test_copy_tree_preserves_content(tmp_path: Path) -> None:
     dst = tmp_path / "dst"
     assert copy_tree(src, dst) == 1
     assert (dst / "a" / "b" / "deep.txt").read_text(encoding="utf-8") == "deep content"
+
+
+# --- swap_dir: one test per phase, including both rename failures -------------
+
+
+def _staged_pair(tmp_path: Path) -> tuple[Path, Path]:
+    """(staging, target): a fresh snapshot beside an older, populated one."""
+    staging, target = tmp_path / ".t-staging", tmp_path / "t"
+    _touch(staging / "new.txt", "new snapshot")
+    _touch(target / "old.txt", "old snapshot")
+    return staging, target
+
+
+def test_swap_dir_installs_staging_and_drops_the_old_tree(tmp_path: Path) -> None:
+    staging, target = _staged_pair(tmp_path)
+
+    assert swap_dir(staging, target) is None
+
+    assert (target / "new.txt").read_text(encoding="utf-8") == "new snapshot"
+    assert not (target / "old.txt").exists()
+    assert not staging.exists()
+    assert list(tmp_path.glob("t.old-*")) == [], "the aside copy must not survive a clean swap"
+
+
+def test_swap_dir_without_a_pre_existing_target(tmp_path: Path) -> None:
+    staging, target = tmp_path / ".t-staging", tmp_path / "t"
+    _touch(staging / "new.txt", "new snapshot")
+
+    assert swap_dir(staging, target) is None
+    assert (target / "new.txt").read_text(encoding="utf-8") == "new snapshot"
+
+
+def test_swap_dir_first_rename_failure_leaves_the_target_untouched(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Phase 1 raises (a live handle on Windows): abandon without losing anything."""
+    staging, target = _staged_pair(tmp_path)
+
+    def deny(*_args: object, **_kwargs: object) -> None:
+        raise PermissionError("WinError 5 (simulated)")
+
+    monkeypatch.setattr(os, "replace", deny)
+    with pytest.raises(PermissionError):
+        swap_dir(staging, target)
+
+    assert (target / "old.txt").read_text(encoding="utf-8") == "old snapshot", (
+        "the previous snapshot must survive a failed first rename"
+    )
+    assert not (target / "new.txt").exists()
+
+
+def test_swap_dir_second_rename_failure_rolls_the_old_tree_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Phase 2 raises: the aside copy is put back before the error propagates."""
+    staging, target = _staged_pair(tmp_path)
+    real_replace = os.replace
+    calls: list[int] = []
+
+    def fail_on_second(src: Path, dst: Path) -> None:
+        calls.append(1)
+        if len(calls) == 2:  # move the staging in
+            raise PermissionError("WinError 5 (simulated)")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", fail_on_second)
+    with pytest.raises(PermissionError):
+        swap_dir(staging, target)
+
+    assert len(calls) == 3, "the rollback rename must run after the failed install"
+    assert (target / "old.txt").read_text(encoding="utf-8") == "old snapshot", (
+        "the previous snapshot must be rolled back into place"
+    )
+    assert not (target / "new.txt").exists()
+    assert list(tmp_path.glob("t.old-*")) == [], "the aside copy must not be left behind"
+
+
+def test_swap_dir_reports_an_aside_copy_it_could_not_remove(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The swap succeeded; only the cleanup failed, so it is reported, not raised.
+
+    Patching the `shutil` module object itself is what swap_dir resolves at call
+    time, so this covers the real code path rather than a re-export.
+    """
+    staging, target = _staged_pair(tmp_path)
+    monkeypatch.setattr(shutil, "rmtree", lambda *_a, **_kw: None)
+
+    leftover = swap_dir(staging, target)
+
+    assert leftover is not None
+    assert leftover.name.startswith("t.old-")
+    assert (leftover / "old.txt").is_file()
+    assert (target / "new.txt").read_text(encoding="utf-8") == "new snapshot"
