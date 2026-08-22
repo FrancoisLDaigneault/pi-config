@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.7](https://github.com/fld-forge/pi-config/compare/v0.6.6...v0.6.7) (2026-08-22)
+
+
+### Bug Fixes
+
+* keep snapshots and backups honest when they fail ([#71](https://github.com/fld-forge/pi-config/issues/71)) ([b31524e](https://github.com/fld-forge/pi-config/commit/b31524e30488f93e94dba6e95f4bfa075fcc48b4))
+
 ## [0.6.6](https://github.com/fld-forge/pi-config/compare/v0.6.5...v0.6.6) (2026-08-22)
 
 
