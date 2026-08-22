@@ -43,3 +43,9 @@ desktop.ini
 
 # Generated Graphify knowledge-graph artifacts
 graphify-out/
+
+# Transient sync working directories: config/ is rebuilt beside itself and the
+# previous snapshot is kept aside until the swap lands. A hard kill can leave
+# one behind, and the documented pre-commit workflow runs `git add -A`.
+.config-staging-*/
+config.old-*/

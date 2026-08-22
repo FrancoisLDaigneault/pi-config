@@ -1,6 +1,7 @@
 """E2E: full cycle through the real scripts/ entry points (subprocess)."""
 
 import os
+import sqlite3
 import subprocess
 import sys
 from collections.abc import Callable
@@ -25,12 +26,13 @@ def run_script(
     )
 
 
-def files_under(root: Path) -> dict[str, str]:
-    return {
-        p.relative_to(root).as_posix(): p.read_text(encoding="utf-8")
-        for p in root.rglob("*")
-        if p.is_file()
-    }
+def files_under(root: Path) -> dict[str, bytes]:
+    """Bytes, not text: a fake home holds a real SQLite database, which is binary.
+
+    Comparing bytes is also the stricter check - a line-ending change would
+    slip past a decoded comparison.
+    """
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
 
 
 def test_sync_then_restore_on_fresh_machine(
@@ -57,8 +59,9 @@ def test_sync_then_restore_on_fresh_machine(
     for rel, content in restored.items():
         assert rel in source, f"unexpected restored file: {rel}"
         if rel == ".pi/agent/settings.json":
-            assert "<REDACTED>" in content
-            assert "sk-secret" not in content
+            decoded = content.decode("utf-8")
+            assert "<REDACTED>" in decoded
+            assert "sk-secret" not in decoded
         else:
             assert content == source[rel], f"different content: {rel}"
 
@@ -81,8 +84,13 @@ def test_backup_full_sandbox(tmp_path: Path, make_fake_home: Callable[[Path], Pa
 
     for line in ["pi-agent", "context-mode patch", "mempalace", "agents-skills", "TOTAL"]:
         assert line in result.stdout
-    assert "WARNING MemPalace" in result.stdout
+    assert "SQLite database(s) snapshotted" in result.stdout
     # The full local backup includes auth.json (unlike the repo)
     assert (dest / "pi-agent" / "auth.json").is_file()
-    assert (dest / "mempalace" / "knowledge_graph.sqlite3").is_file()
     assert (dest / "patched-node_modules" / "context-mode-version.txt").is_file()
+    # The memory database crosses as a snapshot that actually opens
+    restored = sqlite3.connect(dest / "mempalace" / "knowledge_graph.sqlite3")
+    try:
+        assert restored.execute("SELECT count(*) FROM memories").fetchone()[0] == 1
+    finally:
+        restored.close()

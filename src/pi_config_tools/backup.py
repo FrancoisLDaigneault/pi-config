@@ -14,11 +14,57 @@ from pathlib import Path
 from pi_config_tools import paths
 from pi_config_tools.fsops import copy_tree
 from pi_config_tools.patched import context_mode_version, copy_patched
+from pi_config_tools.sqlite_backup import snapshot_tree
 
 
 def default_destination(now: datetime | None = None) -> Path:
     stamp = (now or datetime.now()).strftime("%Y-%m-%d_%H%M%S")
     return paths.home() / "pi-backups" / stamp
+
+
+def rejected_destination(dest: Path) -> str | None:
+    """Why `dest` cannot receive a backup, or None when it can.
+
+    A destination inside a backed-up root makes the copy walk into its own
+    output: the sections duplicate data already written, the snapshot inflates,
+    and a restore cannot tell the backup from what it was backing up. Both
+    sides are resolved, so `..` segments and symlinks cannot smuggle a
+    destination back under a source.
+
+    Known limit: resolution is textual, so two names for the same volume (a
+    mapped drive or a UNC share pointing at the same folder) are not seen as
+    equal. Comparing physical identity would mean carrying a Windows-specific
+    file-id probe for a case a single maintainer reaches by choosing to, and
+    the containment check is defence in depth rather than the last line: pick
+    a destination outside the backed-up roots.
+
+    A non-empty destination is refused as well. Writing into one leaves files
+    from an earlier run beside the new ones -- deleted upstream, or companions
+    of a database that no longer exists -- and nothing in the result says which
+    run a file came from, while the summary still reports a success.
+
+    Second known limit, of the same kind: that emptiness is read once, and
+    anything landing in the folder afterwards is still mixed into a backup
+    reported as a success. Nothing inside this program can open that window --
+    between the check and the first section it only creates the folder -- so
+    reaching it takes another writer aiming at a destination that is freshly
+    timestamped by default. Closing it would mean building into a private
+    folder and publishing it at the end, which is the non-atomic directory
+    swap `fsops.swap_dir` documents as the expensive part of this codebase on
+    Windows. Both checks here are defence in depth, not the last line.
+    """
+    resolved = dest.resolve()
+    for root in (paths.pi_agent(), paths.agents_skills(), paths.mempalace()):
+        source = root.resolve()
+        if resolved == source:
+            return f"the destination is the backed-up folder {source} itself"
+        if source in resolved.parents:
+            return f"the destination is inside the backed-up folder {source}"
+    if dest.is_file():
+        return f"{dest} is a file, not a folder"
+    if dest.is_dir() and any(dest.iterdir()):
+        return f"{dest} is not empty, and a backup must not be mixed with an earlier one"
+    return None
 
 
 def _backup_pi_agent(dest: Path) -> int:
@@ -50,17 +96,20 @@ def _backup_patch(dest: Path) -> int:
 
 
 def _backup_mempalace(dest: Path) -> int:
+    """MemPalace, with its databases snapshotted rather than copied.
+
+    A live `-wal` used to earn a warning telling the operator to close Pi, and
+    the copy was made anyway: a torn backup was reported as a success. The
+    snapshot removes both the false success and the reason to close Pi.
+    """
     root = paths.mempalace()
     if not root.is_dir():
         print(f"  warning: {root} missing, section skipped")
         return 0
-    wal_shm = [p.name for p in root.rglob("*") if p.name.endswith(("-wal", "-shm"))]
-    if wal_shm:
-        print(
-            f"  WARNING MemPalace: SQLite -wal/-shm files detected ({', '.join(wal_shm)}). "
-            "Close Pi/mempalace before the backup for a consistent copy."
-        )
-    return copy_tree(root, dest / "mempalace", exclude_dirs=set(), exclude_files=[])
+    files, databases = snapshot_tree(root, dest / "mempalace")
+    if databases:
+        print(f"  mempalace: {databases} SQLite database(s) snapshotted under their own locks")
+    return files
 
 
 def _backup_skills(dest: Path) -> int:
@@ -102,6 +151,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     dest = args.destination if args.destination is not None else default_destination()
+    # Checked before the folder is created: refusing after mkdir would already
+    # have written into the tree being backed up.
+    rejection = rejected_destination(dest)
+    if rejection is not None:
+        print(f"error: {rejection} - pick an empty folder outside the backed-up roots.")
+        return 1
     dest.mkdir(parents=True, exist_ok=True)
     print(f"Backing up to: {dest}\n")
 
