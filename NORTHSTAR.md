@@ -23,7 +23,7 @@ Supporting indicators:
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
 | Median cost per test | 52 ms (5.88 s / 114 tests), read 2026-08-22 | < 60 ms | The wall clock below divided by the number of tests it reports |
-| Test suite duration (feedback-loop ceiling) | 5.88 s (114 tests), median of 11 warm runs, read 2026-08-22 | < 10 s | `uv run pytest -q` (CI gate). `addopts` adds `--cov`, about 19% of that wall clock, so this speed reading pays for the coverage gate. One run is noise - 5.45 to 6.25 s observed across 11 - so the figure is a median, never a single reading |
+| Test suite duration (feedback-loop ceiling) | 5.88 s (114 tests), median of 11 warm runs, read 2026-08-22 | < 10 s | `uv run pytest -q` (CI gate). `addopts` adds `--cov`, about 21% of that wall clock (5.88 s with, 4.64 s without, both medians), so this speed reading pays for the coverage gate. One run is noise - 5.45 to 6.25 s observed across 11 - so the figure is a median, never a single reading |
 
 Cost per test is what catches a real slowdown: a sleep, a fixture that grew, a
 timeout actually waited on. A wall-clock target alone punished the opposite -
