@@ -83,11 +83,13 @@ ruleset change.
 - `uv run` may rewrite `uv.lock` when `pyproject.toml` is ahead of it
   (post-release window). Restore with `git checkout -- uv.lock` unless the
   change is intended.
-- release-please PRs run CI only when the `RELEASE_PLEASE_TOKEN` secret exists
-  (a fine-grained PAT; with the `github.token` fallback GitHub's anti-recursion
-  suppresses the checks - see `.github/workflows/release-please.yml`). Check
-  the PR's checks tab rather than assuming either state; post-merge CI on
-  `main` always runs.
+- release-please PRs are pushed with a `fld-forge-release` GitHub App
+  installation token, so they run CI like any other branch - see
+  `.github/workflows/release-please.yml`. There is no `github.token` fallback:
+  pushes made with that token trigger no workflow at all (GitHub
+  anti-recursion), so a fallback would silently open release PRs carrying no
+  checks; a token that cannot be minted fails the job instead. Post-merge CI
+  on `main` always runs.
 - CRLF warnings on Windows are checkout-side only; committed blobs are LF
   (`.gitattributes` enforces `eol=lf`).
 - Repo-local SSH commit signing is configured (`commit.gpgsign true`);

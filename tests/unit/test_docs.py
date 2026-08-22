@@ -405,21 +405,34 @@ def test_agents_skills_snapshot_status_documented() -> None:
 def test_release_pr_checks_claim_matches_workflow() -> None:
     """The AGENTS.md release-PR quirk must track the workflow's token logic.
 
-    release-please pushes the release PR with RELEASE_PLEASE_TOKEN when the
-    secret exists (PR gets CI like any branch) and falls back to github.token
-    otherwise (GitHub anti-recursion: no checks). The doc claim must stay
-    conditional as long as the workflow carries that fallback.
+    release-please pushes the release PR with a GitHub App installation
+    token, so the PR gets CI like any other branch. A github.token fallback
+    would silently restore the old behavior (GitHub anti-recursion: no
+    checks on the release PR), so the gate fails if one reappears, and the
+    doc claim must stay unconditional while none does.
     """
-    workflow = _text(".github/workflows/release-please.yml")
-    assert "secrets.RELEASE_PLEASE_TOKEN || github.token" in workflow, (
-        "release-please.yml: token fallback expression is gone; rewrite the "
-        "AGENTS.md release-PR checks quirk for the new unconditional behavior"
+    # Parsed rather than text-matched: the workflow explains in prose why the
+    # fallback is gone, and that mention must not read as the expression.
+    steps = yaml.safe_load(_text(".github/workflows/release-please.yml"))
+    steps = steps["jobs"]["release-please"]["steps"]
+    release = [step for step in steps if step.get("id") == "release"]
+    assert len(release) == 1, "release-please.yml: no single step with id 'release'"
+    pushed_with = release[0]["with"]["token"]
+    assert pushed_with == "${{ steps.app-token.outputs.token }}", (
+        "release-please.yml: the release PR is no longer pushed with the app "
+        "installation token; rewrite the AGENTS.md release-PR checks quirk "
+        "for whatever identity replaced it"
+    )
+    assert "github.token" not in yaml.dump(steps), (
+        "release-please.yml: a github.token fallback is back; pushes made "
+        "with it trigger no workflow (anti-recursion), so release PRs would "
+        "silently carry no checks instead of failing loudly"
     )
     claim = re.search(
-        r"release-please PRs run CI only when the `RELEASE_PLEASE_TOKEN` secret exists",
+        r"release-please PRs are pushed with a `fld-forge-release` GitHub App",
         _flat("AGENTS.md"),
     )
-    assert claim, "AGENTS.md: conditional release-PR checks claim not found"
+    assert claim, "AGENTS.md: unconditional release-PR checks claim not found"
     agents = _text("AGENTS.md")
     for anchor in ("merge_method=squash", "-f sha=", "verification.verified"):
         assert anchor in agents, (
