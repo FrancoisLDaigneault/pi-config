@@ -38,7 +38,9 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           # Without these the token inherits every permission the installation
           # holds; naming them narrows it to what release-please actually does
-          # (push the release branch, open the release PR and label it).
+          # (push the release branch, open the release PR and label it). The
+          # installation grants exactly these two today, so the narrowing binds
+          # nothing yet: it caps the token if the app is ever granted more.
           permission-contents: write
           permission-pull-requests: write
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0

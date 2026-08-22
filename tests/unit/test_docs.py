@@ -410,11 +410,23 @@ def test_release_pr_checks_claim_matches_workflow() -> None:
     would silently restore the old behavior (GitHub anti-recursion: no
     checks on the release PR), so the gate fails if one reappears, and the
     doc claim must stay unconditional while none does.
+
+    Dropping or renaming the step that mints the token is just as silent:
+    the reference resolves to an empty string, release-please pushes with
+    nothing, and no other gate here parses workflow expressions. So the
+    minting step is asserted alongside the expression that consumes it.
     """
     # Parsed rather than text-matched: the workflow explains in prose why the
     # fallback is gone, and that mention must not read as the expression.
     steps = yaml.safe_load(_text(".github/workflows/release-please.yml"))
     steps = steps["jobs"]["release-please"]["steps"]
+    minted = [step for step in steps if step.get("id") == "app-token"]
+    assert len(minted) == 1, (
+        "release-please.yml: no single step with id 'app-token' mints the "
+        "installation token, so ${{ steps.app-token.outputs.token }} resolves "
+        "to an empty string and the AGENTS.md claim that release PRs run CI "
+        "like any other branch becomes false"
+    )
     release = [step for step in steps if step.get("id") == "release"]
     assert len(release) == 1, "release-please.yml: no single step with id 'release'"
     pushed_with = release[0]["with"]["token"]
@@ -428,11 +440,19 @@ def test_release_pr_checks_claim_matches_workflow() -> None:
         "with it trigger no workflow (anti-recursion), so release PRs would "
         "silently carry no checks instead of failing loudly"
     )
-    claim = re.search(
-        r"release-please PRs are pushed with a `fld-forge-release` GitHub App",
-        _flat("AGENTS.md"),
-    )
-    assert claim, "AGENTS.md: unconditional release-PR checks claim not found"
+    # Both halves are anchored: the identity alone would still read as true
+    # next to a later sentence reinstating a fallback, and a doc that
+    # contradicts itself on this point is what the gate exists to catch.
+    agents_flat = _flat("AGENTS.md")
+    for claim in (
+        "release-please PRs are pushed with a `fld-forge-release` GitHub App",
+        "There is no `github.token` fallback",
+    ):
+        assert claim in agents_flat, (
+            f"AGENTS.md: release-PR checks quirk is missing {claim!r}; it must "
+            f"state both the app identity and that nothing falls back to "
+            f"github.token, or the claim stops matching the workflow"
+        )
     agents = _text("AGENTS.md")
     for anchor in ("merge_method=squash", "-f sha=", "verification.verified"):
         assert anchor in agents, (
