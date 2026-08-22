@@ -34,9 +34,18 @@ def is_sqlite(path: Path) -> bool:
         return False
 
 
-def is_sidecar(path: Path) -> bool:
-    """True for the -wal/-shm/-journal companions of a database."""
-    return path.name.endswith(SIDECAR_SUFFIXES)
+def sidecar_parent(path: Path) -> Path | None:
+    """The database a -wal/-shm/-journal companion belongs to, or None.
+
+    Judged by name alone, so the caller must still check that the parent is a
+    database it actually snapshotted. A suffix is not a sidecar: a plain file
+    named `notes-journal` has a parent that does not exist, and dropping it
+    from a backup on the strength of its name loses data silently.
+    """
+    for suffix in SIDECAR_SUFFIXES:
+        if path.name.endswith(suffix):
+            return path.with_name(path.name[: -len(suffix)])
+    return None
 
 
 def backup_db(src: Path, dst: Path) -> None:
@@ -61,27 +70,36 @@ def backup_db(src: Path, dst: Path) -> None:
 def snapshot_tree(src: Path, dst: Path) -> tuple[int, int]:
     """Copy `src` into `dst`, snapshotting databases instead of copying them.
 
-    Sidecars are skipped on purpose: `backup_db` folds the WAL into the
-    snapshot, so copying the companions alongside would put back exactly the
-    torn state this module exists to avoid.
+    A companion of a snapshotted database is skipped on purpose: `backup_db`
+    folds the WAL into the snapshot, so copying it alongside would put back
+    exactly the torn state this module exists to avoid. Every other file is
+    copied, including one whose name merely ends in a sidecar suffix.
+
+    Databases are taken first so that decision never depends on the order
+    `iterdir` happens to return.
 
     Returns (files written, databases snapshotted).
     """
+    entries = sorted(src.iterdir())
     files = databases = 0
-    for item in sorted(src.iterdir()):
+    snapshotted: set[str] = set()
+    for item in entries:
+        if item.is_file() and is_sqlite(item):
+            backup_db(item, dst / item.name)
+            snapshotted.add(item.name)
+            files += 1
+            databases += 1
+    for item in entries:
         target = dst / item.name
         if item.is_dir():
             sub_files, sub_databases = snapshot_tree(item, target)
             files += sub_files
             databases += sub_databases
-        elif item.is_file():
-            if is_sidecar(item):
+        elif item.is_file() and item.name not in snapshotted:
+            parent = sidecar_parent(item)
+            if parent is not None and parent.name in snapshotted:
                 continue
-            if is_sqlite(item):
-                backup_db(item, target)
-                databases += 1
-            else:
-                dst.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(item, target)
+            dst.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, target)
             files += 1
     return files, databases

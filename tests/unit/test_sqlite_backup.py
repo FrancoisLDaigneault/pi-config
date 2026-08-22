@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from pi_config_tools.sqlite_backup import backup_db, is_sidecar, is_sqlite, snapshot_tree
+from pi_config_tools.sqlite_backup import backup_db, is_sqlite, sidecar_parent, snapshot_tree
 
 
 def _wal_db(path: Path, rows: int = 3) -> None:
@@ -46,11 +46,12 @@ def test_is_sqlite_reads_the_header_not_the_extension(tmp_path: Path) -> None:
     assert not is_sqlite(tmp_path / "absent.sqlite3")
 
 
-def test_is_sidecar_covers_the_three_companions() -> None:
-    assert is_sidecar(Path("k.sqlite3-wal"))
-    assert is_sidecar(Path("k.sqlite3-shm"))
-    assert is_sidecar(Path("k.sqlite3-journal"))
-    assert not is_sidecar(Path("k.sqlite3"))
+def test_sidecar_parent_names_the_database_each_companion_belongs_to() -> None:
+    for suffix in ("-wal", "-shm", "-journal"):
+        assert sidecar_parent(Path(f"k.sqlite3{suffix}")) == Path("k.sqlite3")
+    assert sidecar_parent(Path("k.sqlite3")) is None
+    # A suffix is not a sidecar: this one's parent, `notes`, is nobody.
+    assert sidecar_parent(Path("notes-journal")) == Path("notes")
 
 
 def test_backup_db_snapshots_a_live_wal_database(tmp_path: Path) -> None:
@@ -118,6 +119,48 @@ def test_snapshot_tree_skips_sidecars_and_keeps_plain_files(tmp_path: Path) -> N
     assert (dst / "notes.md").read_text(encoding="utf-8") == "plain"
     assert not list(dst.rglob("*-wal")), "sidecars must not be copied alongside a snapshot"
     assert not list(dst.rglob("*-shm"))
+
+
+def test_snapshot_tree_keeps_a_plain_file_named_like_a_sidecar(tmp_path: Path) -> None:
+    """Only a companion of a snapshotted database may be dropped.
+
+    Skipping on the suffix alone deleted `notes-journal` from the backup and
+    did not even count it, so the summary reported a success that had lost
+    data.
+    """
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "notes-journal").write_text("field notes", encoding="utf-8")
+    (src / "todo-wal").write_text("write a letter", encoding="utf-8")
+    (src / "orphan.sqlite3-wal").write_bytes(b"no database of this name here")
+
+    dst = tmp_path / "dst"
+    files, databases = snapshot_tree(src, dst)
+
+    assert (files, databases) == (3, 0), "every file must be copied and counted"
+    assert (dst / "notes-journal").read_text(encoding="utf-8") == "field notes"
+    assert (dst / "todo-wal").read_text(encoding="utf-8") == "write a letter"
+    assert (dst / "orphan.sqlite3-wal").exists(), (
+        "a sidecar whose database is absent is an ordinary file, not a companion"
+    )
+
+
+def test_snapshot_tree_drops_a_sidecar_only_beside_its_own_database(tmp_path: Path) -> None:
+    """The companion of a real database goes; a same-named stranger stays."""
+    src = tmp_path / "src"
+    con = _live_wal_db(src / "graph.sqlite3", rows=2)
+    try:
+        assert (src / "graph.sqlite3-wal").exists(), "the fixture must leave a live WAL"
+        (src / "other.sqlite3-wal").write_bytes(b"not a companion of graph.sqlite3")
+        dst = tmp_path / "dst"
+        files, databases = snapshot_tree(src, dst)
+    finally:
+        con.close()
+
+    assert (files, databases) == (2, 1)
+    assert not (dst / "graph.sqlite3-wal").exists(), "its WAL is folded into the snapshot"
+    assert (dst / "other.sqlite3-wal").exists(), "this one belongs to no snapshotted database"
+    assert _rows(dst / "graph.sqlite3") == 2
 
 
 def test_snapshot_tree_copies_a_file_that_only_looks_like_a_database(tmp_path: Path) -> None:
