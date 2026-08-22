@@ -1,5 +1,6 @@
 """Unit tests for the SQLite-aware snapshot (everything in tmp_path)."""
 
+import os
 import shutil
 import sqlite3
 from collections.abc import Callable
@@ -206,6 +207,26 @@ def test_snapshot_tree_drops_a_sidecar_only_beside_its_own_database(tmp_path: Pa
     assert not (dst / "graph.sqlite3-wal").exists(), "its WAL is folded into the snapshot"
     assert (dst / "other.sqlite3-wal").exists(), "this one belongs to no snapshotted database"
     assert _rows(dst / "graph.sqlite3") == 2
+
+
+def test_snapshot_tree_keeps_the_timestamps_of_the_files_it_copies(tmp_path: Path) -> None:
+    """A backup that rewrites every mtime to now cannot answer when a file changed.
+
+    `copy2` over `copy` is the choice that keeps them, and it is one character
+    wide: swapping it leaves the content assertions everywhere else untouched,
+    so the promise needs an assertion of its own.
+    """
+    src = tmp_path / "src"
+    src.mkdir()
+    plain = src / "notes.md"
+    plain.write_text("plain", encoding="utf-8")
+    long_ago = 1_000_000_000.0
+    os.utime(plain, (long_ago, long_ago))
+
+    dst = tmp_path / "dst"
+    snapshot_tree(src, dst)
+
+    assert (dst / "notes.md").stat().st_mtime == pytest.approx(long_ago)
 
 
 def test_snapshot_tree_copies_a_file_that_only_looks_like_a_database(tmp_path: Path) -> None:
