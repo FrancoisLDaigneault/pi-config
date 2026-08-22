@@ -122,25 +122,39 @@ def _take(item: Path, target: Path) -> bool:
 
     Returns True when it was taken as a database snapshot.
 
-    Reading the header and copying the file cannot be made one atomic step, so
-    the loser of that race is handled rather than classified in advance. A file
-    that stopped being a database in between is copied for what it now is; the
-    error is only swallowed once a second read confirms the type really
-    changed, because a database that is still a database and still refuses to
-    be snapshotted is a genuine failure and must not be hidden behind a plain
-    copy.
+    Reading the header and copying the file cannot be made one atomic step,
+    and re-reading the source does not close that window -- it only narrows it
+    to two adjacent calls. So the plain copy is judged afterwards, on what
+    landed rather than on what was predicted, and a database that arrived that
+    way is removed instead of kept: copied file by file it answers `ok` to an
+    integrity check while holding none of the rows its WAL still carries.
+
+    A file that stopped being a database before it could be snapshotted is
+    copied for what it now is, and that error is swallowed only once the copy
+    confirms the type really changed -- a database still refusing to be
+    snapshotted is a genuine failure and must not be hidden behind a plain
+    copy. When the copy refutes it, that original error is raised again rather
+    than replaced, because it is the failure that actually happened.
     """
-    if not is_sqlite(item):
-        shutil.copy2(item, target)
+    cause: sqlite3.DatabaseError | None = None
+    if is_sqlite(item):
+        try:
+            backup_db(item, target)
+            return True
+        except sqlite3.DatabaseError as exc:
+            if is_sqlite(item):
+                raise
+            cause = exc
+    shutil.copy2(item, target)
+    if not is_sqlite(target):
         return False
-    try:
-        backup_db(item, target)
-    except sqlite3.DatabaseError:
-        if is_sqlite(item):
-            raise
-        shutil.copy2(item, target)
-        return False
-    return True
+    target.unlink()
+    if cause is not None:
+        raise cause
+    raise sqlite3.DatabaseError(
+        f"{item} was a plain file when its header was read and a database when it "
+        "was copied, so the copy holds none of the rows its WAL still carries"
+    )
 
 
 def snapshot_tree(src: Path, dst: Path) -> tuple[int, int]:

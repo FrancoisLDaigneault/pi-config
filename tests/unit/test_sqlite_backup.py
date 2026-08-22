@@ -373,3 +373,85 @@ def test_snapshot_tree_still_fails_when_a_latecomer_stays_a_database(
 
     with pytest.raises(sqlite3.DatabaseError, match="disk I/O error"):
         snapshot_tree(src, dst)
+
+
+def test_snapshot_tree_refuses_a_database_that_landed_as_a_plain_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The window no amount of re-reading closes: ordinary, then a database.
+
+    Reading the header again just before the copy narrows the race to two
+    adjacent calls, it does not remove it. A file that becomes a live database
+    inside that gap is copied byte for byte, without its WAL, and the result
+    answers `ok` to an integrity check while holding none of the committed
+    rows -- so the assertion below is on the rows, never on the integrity.
+
+    The promotion is injected into `copy2` itself, which is the only place the
+    remaining gap can be entered, and nothing of the module under test is
+    stubbed.
+    """
+    src = tmp_path / "src"
+    src.mkdir()
+    latecomer = src / "aa.data"
+    latecomer.write_text("ordinary when the header is read", encoding="utf-8")
+
+    live: list[sqlite3.Connection] = []
+    real_copy2 = shutil.copy2
+
+    def promote_then_copy(source: Path, target: Path) -> None:
+        if not live:
+            latecomer.unlink()
+            live.append(_live_wal_db(latecomer, rows=7))
+        real_copy2(source, target)
+
+    monkeypatch.setattr(shutil, "copy2", promote_then_copy)
+    dst = tmp_path / "dst"
+    try:
+        with pytest.raises(sqlite3.DatabaseError, match="copied"):
+            snapshot_tree(src, dst)
+        # Before the close, or the checkpoint would remove the proof.
+        assert (src / "aa.data-wal").exists(), "the source must really be a live database"
+        assert _rows(latecomer) == 7, "the rows this copy would have dropped"
+    finally:
+        for connection in live:
+            connection.close()
+
+    assert not (dst / "aa.data").exists(), (
+        "a database copied as a plain file is removed, not kept as a silent loss"
+    )
+
+
+def test_snapshot_tree_raises_the_original_refusal_when_the_copy_refutes_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Demoted, then a database again by the time the plain copy runs.
+
+    That plain copy only happened because a second read said the file had
+    stopped being a database. When the copy refutes it, the failure that
+    actually happened is the refusal to snapshot, so that is the error which
+    has to surface -- not a new one about the copy that followed it.
+    """
+    live: list[sqlite3.Connection] = []
+    real_copy2 = shutil.copy2
+    latecomer = tmp_path / "src" / "aa.data"
+
+    def demote_and_refuse() -> None:
+        latecomer.write_text("ordinary again", encoding="utf-8")
+        raise sqlite3.DatabaseError("disk I/O error")
+
+    def repromote_then_copy(source: Path, target: Path) -> None:
+        if not live:
+            latecomer.unlink()
+            live.append(_live_wal_db(latecomer, rows=5))
+        real_copy2(source, target)
+
+    src, dst = _promoted_latecomer(tmp_path, monkeypatch, demote_and_refuse)
+    monkeypatch.setattr(shutil, "copy2", repromote_then_copy)
+    try:
+        with pytest.raises(sqlite3.DatabaseError, match="disk I/O error"):
+            snapshot_tree(src, dst)
+    finally:
+        for connection in live:
+            connection.close()
+
+    assert not (dst / "aa.data").exists(), "the database that landed plainly is removed"
