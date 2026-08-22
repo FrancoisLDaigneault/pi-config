@@ -3,9 +3,16 @@
 # Mirror hooks are pinned to tags matching the versions locked in uv.lock;
 # ty, mypy, deptry, Import Linter and pytest run as local system hooks so they use the
 # project venv and stay aligned with CI (see ADR-0010 and ADR-0011).
-# config/ is a byte-faithful live-machine snapshot, excluded from every
-# quality gate (AGENTS.md hard rule): never check or touch it.
+# config/ is a byte-faithful live-machine snapshot, excluded from the style
+# gates (AGENTS.md hard rule): never edit it by hand. The secrets gate below
+# still covers it - that is what its always_run is for.
 exclude: ^config/
+
+# Declared here rather than passed as install flags, so the plain install
+# command every document already prints wires both types: a merge that commits
+# on its own runs pre-merge-commit, not pre-commit, and would otherwise bring in
+# changes no gate ever saw.
+default_install_hook_types: [pre-commit, pre-merge-commit]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -30,6 +37,19 @@ repos:
     rev: 0.11.19
     hooks:
       - id: uv-lock
+
+  # gitleaks reads the staged diff itself (pass_filenames: false), so what it
+  # scans is the whole staged change, config/ included. always_run is what keeps
+  # it reaching that point: pre-commit applies the global exclude: ^config/ to
+  # the file list first and skips a hook whose list came out empty, which on a
+  # commit staging only snapshot files would drop the secrets gate exactly where
+  # a live-machine secret is most likely to enter.
+  - repo: https://github.com/gitleaks/gitleaks
+    # rev matches the gitleaks version pinned in CI (ci.yml "secrets-scan")
+    rev: v8.24.3
+    hooks:
+      - id: gitleaks
+        always_run: true
 
   - repo: local
     hooks:

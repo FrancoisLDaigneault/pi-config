@@ -17,7 +17,7 @@ Supporting indicators:
 
 | Indicator | Current | Target | Measurement |
 | --- | --- | --- | --- |
-| Test suite duration | 2.97 s (64 tests) | < 5 s | `uv run pytest -q` (CI gate) |
+| Test suite duration | 2.97 s (72 tests) | < 5 s | `uv run pytest -q` (CI gate) |
 
 Measurement cadence: CI runs on every push/PR to `main` and every Monday at
 06:00 UTC - the weekly run catches bit-rot without anyone pushing.
@@ -55,7 +55,7 @@ Supporting indicators:
 | Static type diagnostics | 0 in ty and mypy at adoption | 0 blocking | both checkers in pre-commit, `just check`, and CI `quality` |
 | Import architecture | 2/2 contracts kept; 0 TID251 violations | 0 violations | `uv run lint-imports` plus `uv run ruff check .` in every quality surface |
 | src module / script size | max 148 / 8 lines | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
-| Green tests | 64 (42 unit / 20 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
+| Green tests | 72 (50 unit / 20 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
 
 ## Scalability
 
