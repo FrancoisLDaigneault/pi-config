@@ -123,7 +123,7 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 | --- | --- |
 | `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Sections missing or empty on the live side are named and skipped. Run before every commit. |
 | `uv run scripts/restore.py` | The reverse path: `config/` -> live locations. **Simulation by default**; add `--apply` to execute. Never touches `auth.json`. Existing, differing files under `.pi/agent` require `--force`; vendor patches remain freely restorable with `--patch`. Additive: never deletes obsolete live files. |
-| `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. MemPalace databases are snapshotted through SQLite rather than copied file by file, so the backup is consistent even while Pi is writing. Option `--destination`. Exit code 1 if a section fails. |
+| `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. MemPalace databases are snapshotted through SQLite rather than copied file by file, so the backup is consistent even while Pi is writing. Option `--destination`, refused when it points inside a backed-up folder (the backup would copy itself). Exit code 1 if a section fails. |
 
 ## Recommended workflow before every Pi update
 

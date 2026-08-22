@@ -66,6 +66,52 @@ def test_backup_exit_1_on_section_error(
     assert "ERRORS in section(s)" in out
 
 
+def test_backup_refuses_a_destination_that_is_a_backed_up_root(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    home, _repo = sandbox
+    mem = home / ".mempalace"
+    before = sorted(p.name for p in mem.iterdir())
+
+    assert main(["--destination", str(mem)]) == 1
+    out = capsys.readouterr().out
+    assert "is the backed-up folder" in out
+    assert "would copy itself" in out
+    assert sorted(p.name for p in mem.iterdir()) == before, "nothing may be written"
+
+
+def test_backup_refuses_a_destination_under_a_backed_up_root(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    home, _repo = sandbox
+    nested = home / ".pi" / "agent" / "nested" / "backup"
+
+    assert main(["--destination", str(nested)]) == 1
+    assert "is inside the backed-up folder" in capsys.readouterr().out
+    assert not nested.exists(), "the destination must not be created before the refusal"
+
+
+def test_backup_resolves_the_destination_before_judging_it(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A `..` detour must not smuggle the destination back under a source."""
+    home, _repo = sandbox
+    detour = home / ".mempalace" / ".." / ".mempalace" / "sneaky"
+
+    assert main(["--destination", str(detour)]) == 1
+    assert "is inside the backed-up folder" in capsys.readouterr().out
+    assert not (home / ".mempalace" / "sneaky").exists()
+
+
+def test_backup_accepts_a_destination_outside_every_source(
+    sandbox: tuple[Path, Path], tmp_path: Path
+) -> None:
+    """The guard must not reject the ordinary case it exists to protect."""
+    dest = tmp_path / "elsewhere" / "backup"
+    assert main(["--destination", str(dest)]) == 0
+    assert (dest / "mempalace" / "knowledge_graph.sqlite3").is_file()
+
+
 def test_backup_while_the_database_is_open_restores_its_committed_rows(
     sandbox: tuple[Path, Path], tmp_path: Path
 ) -> None:

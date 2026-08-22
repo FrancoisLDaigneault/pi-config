@@ -22,6 +22,25 @@ def default_destination(now: datetime | None = None) -> Path:
     return paths.home() / "pi-backups" / stamp
 
 
+def rejected_destination(dest: Path) -> str | None:
+    """Why `dest` cannot receive a backup, or None when it can.
+
+    A destination inside a backed-up root makes the copy walk into its own
+    output: the sections duplicate data already written, the snapshot inflates,
+    and a restore cannot tell the backup from what it was backing up. Both
+    sides are resolved, so `..` segments and symlinks cannot smuggle a
+    destination back under a source.
+    """
+    resolved = dest.resolve()
+    for root in (paths.pi_agent(), paths.agents_skills(), paths.mempalace()):
+        source = root.resolve()
+        if resolved == source:
+            return f"the destination is the backed-up folder {source} itself"
+        if source in resolved.parents:
+            return f"the destination is inside the backed-up folder {source}"
+    return None
+
+
 def _backup_pi_agent(dest: Path) -> int:
     """Pi config - same exclusions as the old backup-pi.ps1 (auth.json and
     settings.backup* INCLUDED: this is a full local backup, not a repo)."""
@@ -106,6 +125,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     dest = args.destination if args.destination is not None else default_destination()
+    # Checked before the folder is created: refusing after mkdir would already
+    # have written into the tree being backed up.
+    rejection = rejected_destination(dest)
+    if rejection is not None:
+        print(f"error: {rejection}, so the backup would copy itself - pick a folder outside it.")
+        return 1
     dest.mkdir(parents=True, exist_ok=True)
     print(f"Backing up to: {dest}\n")
 
