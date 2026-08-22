@@ -63,8 +63,8 @@ commands documented here stay unchanged.
 - `tests/unit/test_language.py` fails the suite if a scanned file contains
   accented (non-English) characters. The scan covers a defined file set (the
   Python trees, root docs, workflows, templates, justfile); generated or
-  third-party files (`CHANGELOG.md`, `config/`, `LICENSE`, `CODE_OF_CONDUCT.md`)
-  are excluded. The English-only rule itself applies to everything written here.
+  third-party files (`CHANGELOG.md`, `config/`, `LICENSE`) are excluded. The
+  English-only rule itself applies to everything written here.
 
 These standards are **enforced automatically** at two levels:
 
