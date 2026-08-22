@@ -42,6 +42,7 @@ src/pi_config_tools/   # business logic (package installed in editable mode)
   fsops.py             # copy_tree/copy_file with exclusions
   patched.py           # copy and metadata operations for local node_modules patches
   secrets.py           # detection and redaction of secrets in JSON files
+  sqlite_backup.py     # consistent snapshots of SQLite databases (never a file copy)
   sync.py, restore.py, backup.py   # one testable main(argv) per command
 scripts/               # thin entry points (import + sys.exit(main()))
 tests/unit/            # pure functions and tmp_path, incl. the size gate (test_standards.py)
@@ -122,7 +123,7 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 | --- | --- |
 | `uv run scripts/sync.py` | Copies the **live** config (`~/.pi/agent`, `~/.agents/skills`, context-mode patch) to `config/` in the repo. Sections missing or empty on the live side are named and skipped. Run before every commit. |
 | `uv run scripts/restore.py` | The reverse path: `config/` -> live locations. **Simulation by default**; add `--apply` to execute. Never touches `auth.json`. Existing, differing files under `.pi/agent` require `--force`; vendor patches remain freely restorable with `--patch`. Additive: never deletes obsolete live files. |
-| `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. Option `--destination`. Exit code 1 if a section fails. |
+| `uv run scripts/backup.py` | Full **local** backup (config + patch + MemPalace + skills) into a timestamped folder under `~/pi-backups/`. MemPalace databases are snapshotted through SQLite rather than copied file by file, so the backup is consistent even while Pi is writing. Option `--destination`. Exit code 1 if a section fails. |
 
 ## Recommended workflow before every Pi update
 
@@ -130,7 +131,7 @@ Logic in pure Python stdlib (`dependencies = []`; quality tooling in the dev gro
 syncs go through a branch:
 
 ```bash
-uv run scripts/backup.py     # full local safety net (close Pi first for MemPalace)
+uv run scripts/backup.py     # full local safety net (safe while Pi is running)
 uv run scripts/sync.py       # updates config/ in the repo
 git switch -c chore/sync-config
 git add -A

@@ -9,14 +9,11 @@ from pi_config_tools import sync
 from pi_config_tools.restore import main
 
 
-def snapshot(root: Path) -> dict[str, str]:
+def snapshot(root: Path) -> dict[str, bytes]:
+    """Bytes: the sandbox holds a real SQLite database, which is not text."""
     if not root.exists():
         return {}
-    return {
-        p.relative_to(root).as_posix(): p.read_text(encoding="utf-8")
-        for p in root.rglob("*")
-        if p.is_file()
-    }
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
 
 
 def test_restore_requires_config(sandbox: tuple[Path, Path]) -> None:

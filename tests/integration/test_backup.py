@@ -1,5 +1,6 @@
 """Integration: backup against a sandbox (sections, inclusions, simulated error)."""
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -33,11 +34,16 @@ def test_backup_sections_and_inclusions(
     ).is_file()
     version = dest / "patched-node_modules" / "context-mode-version.txt"
     assert "9.9.9" in version.read_text(encoding="utf-8")
-    # Full MemPalace + wal/shm warning
-    assert (dest / "mempalace" / "knowledge_graph.sqlite3").is_file()
-    assert (dest / "mempalace" / "knowledge_graph.sqlite3-wal").is_file()
+    # MemPalace: databases snapshotted, plain neighbours copied, sidecars skipped
+    backed_up = dest / "mempalace" / "knowledge_graph.sqlite3"
+    assert backed_up.is_file()
+    assert (dest / "mempalace" / "notes.md").is_file()
+    assert not (dest / "mempalace" / "knowledge_graph.sqlite3-wal").exists(), (
+        "copying the sidecar back would restore the torn state the snapshot avoids"
+    )
     out = capsys.readouterr().out
-    assert "WARNING MemPalace" in out
+    assert "1 SQLite database(s) snapshotted" in out
+    assert "WARNING MemPalace" not in out, "a live -wal is normal, not a warning"
     # Skills without Python caches
     assert (dest / "agents-skills" / "scaffold" / "SKILL.md").is_file()
     assert not (dest / "agents-skills" / "scaffold" / "__pycache__").exists()
@@ -58,3 +64,39 @@ def test_backup_exit_1_on_section_error(
     out = capsys.readouterr().out
     assert "ERROR pi-agent" in out
     assert "ERRORS in section(s)" in out
+
+
+def test_backup_while_the_database_is_open_restores_its_committed_rows(
+    sandbox: tuple[Path, Path], tmp_path: Path
+) -> None:
+    """Back up while Pi is running - the case the old warning told you to avoid.
+
+    A live connection keeps the -wal on disk and the newest commits inside it.
+    The measure that matters is not that files were copied, but that the backup
+    opens and still holds every committed row.
+    """
+    home, _repo = sandbox
+    live = home / ".mempalace" / "knowledge_graph.sqlite3"
+    dest = tmp_path / "backup"
+
+    holder = sqlite3.connect(live)
+    try:
+        holder.executemany("INSERT INTO memories VALUES (?)", [(f"live-{i}",) for i in range(25)])
+        holder.commit()
+        assert (home / ".mempalace" / "knowledge_graph.sqlite3-wal").exists(), (
+            "an open connection must leave a live WAL for this test to mean anything"
+        )
+        assert main(["--destination", str(dest)]) == 0
+    finally:
+        holder.close()
+
+    assert not (dest / "mempalace" / "knowledge_graph.sqlite3-wal").exists()
+    restored = sqlite3.connect(dest / "mempalace" / "knowledge_graph.sqlite3")
+    try:
+        assert restored.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        rows = int(restored.execute("SELECT count(*) FROM memories").fetchone()[0])
+    finally:
+        restored.close()
+    # 1 row from the fixture plus the 25 committed into the live WAL: a copy
+    # that dropped the WAL would answer 1.
+    assert rows == 26

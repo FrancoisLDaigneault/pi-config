@@ -2,6 +2,7 @@
 
 import json
 import os
+import sqlite3
 from collections.abc import Callable
 from pathlib import Path
 
@@ -21,6 +22,25 @@ settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "deterministic"))
 def touch(path: Path, content: str = "x") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def make_wal_database(path: Path, rows: int = 1) -> None:
+    """A real WAL-mode SQLite database, cleanly closed (Pi not running).
+
+    A text file named `.sqlite3` proved nothing about the backup path: it never
+    reached SQLite. This one does, so the backup section is exercised for what
+    it actually has to do. Closing the last connection checkpoints and removes
+    the -wal, so a test that needs a live one opens its own connection.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(path)
+    try:
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("CREATE TABLE IF NOT EXISTS memories (body TEXT)")
+        con.executemany("INSERT INTO memories VALUES (?)", [(f"memory-{i}",) for i in range(rows)])
+        con.commit()
+    finally:
+        con.close()
 
 
 def build_fake_home(home: Path) -> Path:
@@ -81,8 +101,8 @@ def build_fake_home(home: Path) -> Path:
     touch(skills / "scaffold" / "SKILL.md", "# Scaffold")
     touch(skills / "scaffold" / "__pycache__" / "m.pyc", "bin")
     mem = home / ".mempalace"
-    touch(mem / "knowledge_graph.sqlite3", "db")
-    touch(mem / "knowledge_graph.sqlite3-wal", "wal")
+    make_wal_database(mem / "knowledge_graph.sqlite3")
+    touch(mem / "notes.md", "# plain file next to a database")
     return home
 
 
@@ -108,3 +128,9 @@ def sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path
 def make_fake_home() -> Callable[[Path], Path]:
     """Exposes the builder to e2e tests without cross-imports between test modules."""
     return build_fake_home
+
+
+@pytest.fixture
+def wal_database() -> Callable[..., None]:
+    """Exposes the real-database builder to the backup tests."""
+    return make_wal_database

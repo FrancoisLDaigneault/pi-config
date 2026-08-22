@@ -14,6 +14,7 @@ from pathlib import Path
 from pi_config_tools import paths
 from pi_config_tools.fsops import copy_tree
 from pi_config_tools.patched import context_mode_version, copy_patched
+from pi_config_tools.sqlite_backup import snapshot_tree
 
 
 def default_destination(now: datetime | None = None) -> Path:
@@ -50,17 +51,20 @@ def _backup_patch(dest: Path) -> int:
 
 
 def _backup_mempalace(dest: Path) -> int:
+    """MemPalace, with its databases snapshotted rather than copied.
+
+    A live `-wal` used to earn a warning telling the operator to close Pi, and
+    the copy was made anyway: a torn backup was reported as a success. The
+    snapshot removes both the false success and the reason to close Pi.
+    """
     root = paths.mempalace()
     if not root.is_dir():
         print(f"  warning: {root} missing, section skipped")
         return 0
-    wal_shm = [p.name for p in root.rglob("*") if p.name.endswith(("-wal", "-shm"))]
-    if wal_shm:
-        print(
-            f"  WARNING MemPalace: SQLite -wal/-shm files detected ({', '.join(wal_shm)}). "
-            "Close Pi/mempalace before the backup for a consistent copy."
-        )
-    return copy_tree(root, dest / "mempalace", exclude_dirs=set(), exclude_files=[])
+    files, databases = snapshot_tree(root, dest / "mempalace")
+    if databases:
+        print(f"  mempalace: {databases} SQLite database(s) snapshotted under their own locks")
+    return files
 
 
 def _backup_skills(dest: Path) -> int:
