@@ -207,6 +207,39 @@ def test_sync_says_the_snapshot_is_missing_when_the_rollback_also_failed(
     )
 
 
+def test_sync_recovers_a_snapshot_left_aside_by_an_interrupted_run(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """config/ missing plus exactly one aside copy is the deterministic crash state."""
+    _home, repo = sandbox
+    aside = repo / "config.old-deadbeef"
+    aside.mkdir()
+    (aside / "PRECIOUS.md").write_text("irreplaceable", encoding="utf-8")
+
+    assert main() == 0
+    out = capsys.readouterr().out
+    assert "a previous sync was interrupted" in out
+    assert not aside.exists(), "the aside copy is moved back, not copied"
+    assert (repo / "config").is_dir()
+
+
+def test_sync_refuses_to_choose_between_several_aside_copies(
+    sandbox: tuple[Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Ambiguous recovery is the operator's call; sync must not guess."""
+    _home, repo = sandbox
+    for token in ("aaaa1111", "bbbb2222"):
+        aside = repo / f"config.old-{token}"
+        aside.mkdir()
+        (aside / "PRECIOUS.md").write_text(token, encoding="utf-8")
+
+    assert main() == 1
+    out = capsys.readouterr().out
+    assert "several previous snapshots" in out
+    assert "config.old-aaaa1111" in out and "config.old-bbbb2222" in out
+    assert not (repo / "config").exists(), "nothing may be installed while it is ambiguous"
+
+
 def test_sync_leaves_no_staging_directory_behind(sandbox: tuple[Path, Path]) -> None:
     """A successful sync must not leave the transient build tree in the repo."""
     _home, repo = sandbox

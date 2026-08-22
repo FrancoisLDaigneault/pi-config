@@ -10,7 +10,13 @@ import sys
 from pathlib import Path
 
 from pi_config_tools import paths
-from pi_config_tools.fsops import SwapError, copy_file, copy_tree, swap_dir
+from pi_config_tools.fsops import (
+    SwapError,
+    copy_file,
+    copy_tree,
+    recover_interrupted_swap,
+    swap_dir,
+)
 from pi_config_tools.patched import context_mode_version, copy_patched
 from pi_config_tools.secrets import REDACTED, redact, scan_copied_json
 
@@ -149,6 +155,10 @@ def _report_swap_failure(exc: SwapError, config: Path) -> None:
 def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup symmetry
     del argv
     config = paths.config_dir()
+    interrupted = recover_interrupted_swap(config)
+    if interrupted is not None:
+        print(f"  error: {interrupted}")
+        return 1
     # Built beside the target, so the swap below is a rename on the same volume
     # and never a cross-device copy.
     staging = config.with_name(f".{config.name}-staging-{os.getpid()}")

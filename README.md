@@ -145,7 +145,9 @@ This machine also runs a daily scheduled backup task (`pi-config-daily-backup`,
 
 After any `npm install` or package update: every locally patched file under `node_modules/` is overwritten on the live side - restore them with `uv run scripts/restore.py --apply --patch`. The versioned copies live in `config/patched-node_modules/`; the authoritative list of covered entries is `PATCHED_RELS` in `src/pi_config_tools/paths.py`, mirrored by that folder's generated `README.md`.
 
-If `sync.py` fails midway (unreadable JSON, permission denied), the previous `config/` is kept: the new snapshot is built beside it and only swapped in once it is complete, so a failed run leaves the last good snapshot in place and exits 1. The swap is three renames, not an atomic operation - the install and its rollback are themselves syscalls that can fail, typically when another process holds a handle under `config/`. If one does, sync says so and names what it left behind; `git restore config/` remains the recovery.
+If `sync.py` fails midway (unreadable JSON, permission denied), the previous `config/` is kept: the new snapshot is built beside it and only swapped in once it is complete, so a failed run leaves the last good snapshot in place and exits 1. The swap is three renames, not an atomic operation - the install and its rollback are themselves syscalls that can fail, typically when another process holds a handle under `config/`. If one does, sync says so and names what it left behind.
+
+A hard kill lands in the one window that rename cannot cover: `config/` is absent, the previous snapshot is at `config.old-<token>` and the new one at `.config-staging-<pid>`. Both are gitignored, so `git status` shows nothing and `git restore config/` would silently bring back whatever was last committed instead. The next `sync.py` detects that state and moves the aside copy back on its own; if several aside copies exist it refuses to choose and lists them, because picking one for you could discard the good snapshot.
 
 ## Restoring on a fresh machine
 

@@ -72,6 +72,33 @@ class SwapError(OSError):
         self.staging = staging
 
 
+def recover_interrupted_swap(config: Path) -> str | None:
+    """Put back a snapshot a previous run was killed in the middle of moving.
+
+    Between the two renames of `swap_dir` the target is absent and the previous
+    snapshot sits under `<name>.old-<token>`. Both that and the staging tree
+    are gitignored, so `git status` shows nothing and nothing else would tell
+    the operator config/ is gone. Returns an error message, or None when there
+    is nothing to do or the recovery succeeded.
+    """
+    if config.exists():
+        return None
+    asides = sorted(config.parent.glob(f"{config.name}.old-*"))
+    if not asides:
+        return None
+    if len(asides) > 1:
+        listed = "\n    ".join(str(path) for path in asides)
+        return (
+            f"{config} is missing and several previous snapshots were left behind:\n"
+            f"    {listed}\n"
+            "  pick the one to keep and rename it to config, by hand: sync will\n"
+            "  not choose between them for you"
+        )
+    os.replace(asides[0], config)
+    print(f"  recovered {config} from {asides[0].name} (a previous sync was interrupted)")
+    return None
+
+
 def swap_dir(staging: Path, target: Path) -> Path | None:
     """Install `staging` as `target`, keeping the old content until the swap lands.
 
@@ -98,7 +125,7 @@ def swap_dir(staging: Path, target: Path) -> Path | None:
 
     Returns the leftover aside path when it could not be removed, else None.
     """
-    aside = target.with_name(f"{target.name}.old-{os.getpid()}")
+    aside = target.with_name(f"{target.name}.old-{os.urandom(4).hex()}")
     had_target = target.exists()
     if had_target:
         try:
