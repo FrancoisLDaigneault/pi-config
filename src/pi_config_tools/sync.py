@@ -163,6 +163,11 @@ def main(argv: list[str] | None = None) -> int:  # argv kept for restore/backup 
     # and never a cross-device copy.
     staging = config.with_name(f".{config.name}-staging-{os.getpid()}")
     shutil.rmtree(staging, ignore_errors=True)
+    if staging.exists():
+        # Ignoring the cleanup error would fold a crashed run's leftovers into
+        # the snapshot that is about to be installed.
+        print(f"  error: {staging} survived cleanup - remove it by hand and run sync again")
+        return 1
     try:
         built = _build(staging)
         if built is None:

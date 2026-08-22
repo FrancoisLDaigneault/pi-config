@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -246,3 +247,24 @@ def test_sync_leaves_no_staging_directory_behind(sandbox: tuple[Path, Path]) -> 
     assert main() == 0
     assert not list(repo.glob(".config-staging-*"))
     assert not list(repo.glob("config.old-*"))
+
+
+def test_sync_stops_when_a_stale_staging_tree_survives_cleanup(
+    sandbox: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A crashed run's leftovers must not be folded into the new snapshot."""
+    _home, repo = sandbox
+    (repo / "config").mkdir()
+    staging = repo / f".config-staging-{os.getpid()}"
+    (staging / "pi-agent").mkdir(parents=True)
+    (staging / "pi-agent" / "GHOST.md").write_text("from a crashed run", encoding="utf-8")
+    monkeypatch.setattr(shutil, "rmtree", lambda *_a, **_kw: None)
+
+    assert main() == 1
+    out = capsys.readouterr().out
+    assert "survived cleanup" in out
+    assert not (repo / "config" / "pi-agent" / "GHOST.md").exists(), (
+        "the stale file must never reach the installed snapshot"
+    )
