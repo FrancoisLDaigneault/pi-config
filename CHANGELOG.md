@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.6](https://github.com/fld-forge/pi-config/compare/v0.6.5...v0.6.6) (2026-08-22)
+
+
+### Bug Fixes
+
+* **release:** publish the provenance bundle as a release asset ([#68](https://github.com/fld-forge/pi-config/issues/68)) ([ff58963](https://github.com/fld-forge/pi-config/commit/ff5896386fa419caf7db978a682a5ad925fdebc6))
+
 ## [0.6.5](https://github.com/fld-forge/pi-config/compare/v0.6.4...v0.6.5) (2026-08-21)
 
 
