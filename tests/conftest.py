@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import sqlite3
 from collections.abc import Callable
 from pathlib import Path
@@ -113,10 +114,29 @@ def _isolate_real_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("PI_CONFIG_REPO", str(tmp_path / "void" / "repo"))
 
 
+@pytest.fixture(scope="session")
+def _fake_home_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The fake live config, built once and copied per test rather than rebuilt.
+
+    Building it entry by entry costs about 24 ms and every test using `sandbox`
+    paid it; copying a prepared tree costs about 15 ms. The template itself is
+    never handed to a test: each one gets its own copy, so nothing is shared
+    and no execution order is introduced.
+    """
+    return build_fake_home(tmp_path_factory.mktemp("fake-home-template") / "home")
+
+
 @pytest.fixture
-def sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
-    """(home, repo) redirected via PI_CONFIG_HOME / PI_CONFIG_REPO."""
-    home = build_fake_home(tmp_path / "home")
+def sandbox(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, _fake_home_template: Path
+) -> tuple[Path, Path]:
+    """(home, repo) redirected via PI_CONFIG_HOME / PI_CONFIG_REPO.
+
+    `copytree` copies with `copy2`, so the timestamps come from the template
+    rather than from now. No test taking `sandbox` reads one: the single mtime
+    assertion builds its own tree under `tmp_path`.
+    """
+    home = Path(shutil.copytree(_fake_home_template, tmp_path / "home"))
     repo = tmp_path / "repo"
     repo.mkdir()
     monkeypatch.setenv("PI_CONFIG_HOME", str(home))
