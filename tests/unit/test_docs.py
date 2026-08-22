@@ -601,6 +601,7 @@ def test_release_assets_documented() -> None:
         "sbom.spdx.json",
         "SHA256SUMS",
         "attest-build-provenance",
+        "attestation.intoto.jsonl",
     )
     gone = [p for p in producers if p not in workflow]
     assert not gone, f"release-please.yml: asset-producing steps missing: {gone}"
