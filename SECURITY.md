@@ -34,12 +34,20 @@ therefore not equivalent, and CI remains the authoritative scan.
 
 Each release ships the wheel, the sdist, a CycloneDX SBOM exported from
 `uv.lock` (`sbom.cdx.json`), an SPDX SBOM from the dependency graph
-(`sbom.spdx.json`), SHA-256 checksums (`SHA256SUMS`) and GitHub
-build-provenance attestations.
+(`sbom.spdx.json`), SHA-256 checksums (`SHA256SUMS`) and the GitHub
+build-provenance attestation bundle (`attestation.intoto.jsonl`).
 To verify a downloaded asset:
 
 ```bash
 gh attestation verify pi_config_tools-<version>-py3-none-any.whl \
   --repo fld-forge/pi-config
 sha256sum --check SHA256SUMS   # inside the folder holding the downloaded assets
+```
+
+The bundle attests every other asset of the release, so the same check also
+runs offline, against the downloaded file instead of the attestation API:
+
+```bash
+gh attestation verify pi_config_tools-<version>-py3-none-any.whl \
+  --repo fld-forge/pi-config --bundle attestation.intoto.jsonl
 ```
