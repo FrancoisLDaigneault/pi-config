@@ -67,7 +67,7 @@ Supporting indicators:
 | Ruff selected-rule violations | 0 | 0 | `uv run ruff check .` (`just check`, pre-commit framework, and CI `quality`) |
 | Static type diagnostics | 0 in ty and mypy at adoption | 0 blocking | both checkers in pre-commit, `just check`, and CI `quality` |
 | Import architecture | 2/2 contracts kept; 0 TID251 violations | 0 violations | `uv run lint-imports` plus `uv run ruff check .` in every quality surface |
-| src module / script size | max 199 / 8 lines, read 2026-08-22 | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
+| src module / script size | max 198 / 8 lines, read 2026-08-22 | <= 200 / <= 20 | `tests/unit/test_standards.py` (the limit is a test) |
 | Green tests | 114 (78 unit / 34 integration / 2 e2e) | 100% green, 3 levels | `uv run pytest` (pre-commit framework + CI) |
 
 ## Scalability
